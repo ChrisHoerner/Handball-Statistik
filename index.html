@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Spielstatistik</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14171c">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <div id="statusbar">
+    <div class="dot offline" id="statusDot"></div>
+    <span id="pending">wird geladen …</span>
+    <button id="syncBtn">Jetzt synchronisieren</button>
+  </div>
+
+  <!-- SCREEN: Einstellungen -->
+  <section class="screen" id="screen-settings">
+    <h1>Einstellungen</h1>
+    <div class="field">
+      <label for="scriptUrl">Apps-Script-URL (Backend)</label>
+      <input type="url" id="scriptUrl" placeholder="https://script.google.com/macros/s/…/exec">
+    </div>
+    <div class="field">
+      <label for="rundeSelect">Aktuelle Runde</label>
+      <input type="text" id="rundeSelect" placeholder="2026/27 Rückrunde">
+    </div>
+    <button class="primary-btn" id="btnSaveSettings">Speichern</button>
+    <button class="secondary-btn" id="btnLoadRoster">Kader jetzt laden (braucht Internet)</button>
+    <p class="hint" id="rosterStatus">Noch kein Kader geladen.</p>
+  </section>
+
+  <!-- SCREEN: Spiel anlegen -->
+  <section class="screen" id="screen-game">
+    <h1>Neues Spiel</h1>
+    <div class="field">
+      <label for="gDatum">Datum</label>
+      <input type="date" id="gDatum">
+    </div>
+    <div class="field">
+      <label for="gGegner">Gegner</label>
+      <input type="text" id="gGegner" placeholder="z. B. HSG Hunsrück">
+    </div>
+    <div class="field">
+      <label for="gRunde">Runde</label>
+      <input type="text" id="gRunde" placeholder="2026/27 Rückrunde">
+    </div>
+    <button class="primary-btn" id="btnStartGame">Spiel starten</button>
+
+    <h2 style="margin-top:1rem">Laufende / letzte Spiele</h2>
+    <div id="gameList"></div>
+  </section>
+
+  <!-- SCREEN: Live-Erfassung -->
+  <section class="screen" id="screen-live">
+    <div id="halbzeitToggle">
+      <button data-hz="1" class="active">1. Halbzeit</button>
+      <button data-hz="2">2. Halbzeit</button>
+    </div>
+
+    <div id="playerStrip"></div>
+
+    <div class="action-group" id="wurfGroup">
+      <h2>Wurf</h2>
+      <div id="wurfRows"></div>
+    </div>
+
+    <div class="action-group">
+      <h2>Ballgewinn</h2>
+      <div class="btn-grid" id="ballgewinnGrid"></div>
+    </div>
+
+    <div class="action-group">
+      <h2>Eigener Fehler</h2>
+      <div class="btn-grid" id="fehlerGrid"></div>
+    </div>
+
+    <div class="action-group">
+      <h2>Einzelereignisse</h2>
+      <div class="btn-grid" id="einzelGrid"></div>
+    </div>
+
+    <div class="action-group" id="twGroup" style="display:none">
+      <h2>Torwart</h2>
+      <div id="twRows"></div>
+    </div>
+
+    <div id="lastEvents">
+      <h2>Letzte Aktionen</h2>
+      <ul id="eventList"></ul>
+    </div>
+  </section>
+
+  <nav class="tabbar">
+    <button data-screen="settings" class="tab active">Einstellungen</button>
+    <button data-screen="game" class="tab">Spiel</button>
+    <button data-screen="live" class="tab">Erfassung</button>
+  </nav>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
