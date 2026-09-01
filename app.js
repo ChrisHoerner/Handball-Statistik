@@ -582,8 +582,12 @@ async function showAuswertung() {
   }
 }
 
-function statsBlockHtml(row) {
-  let html = '<table class="aus-table"><tr><th>Zone</th><th>Versuche</th><th>Erfolg</th><th>Quote</th></tr>';
+function statsBlockHtml(row, isTW) {
+  const versucheLabel = isTW ? 'Würfe aufs Tor' : 'Versuche';
+  const erfolgLabel = isTW ? 'Paraden' : 'Treffer';
+  const quoteLabel = isTW ? 'Paradenquote' : 'Quote';
+  const sectionTitle = isTW ? 'Paraden' : 'Wurf';
+  let html = '<div class="aus-section-title">' + sectionTitle + '</div><table class="aus-table"><tr><th>Zone</th><th>' + versucheLabel + '</th><th>' + erfolgLabel + '</th><th>' + quoteLabel + '</th></tr>';
   WURF_ZONEN.forEach(function (z) {
     html += '<tr><td>' + z + '</td><td>' + (row[z + ' Versuche'] || 0) + '</td><td>' + (row[z + ' Erfolg'] || 0) + '</td><td>' + (row[z + ' Quote'] || '') + '</td></tr>';
   });
@@ -606,15 +610,15 @@ function renderAuswertung(el, row) {
     el.innerHTML = '<p class="aus-empty">Keine Daten für diese Auswahl.</p>';
     return;
   }
-  el.innerHTML = '<div class="aus-section-title">Wurf</div>' + statsBlockHtml(row);
+  el.innerHTML = statsBlockHtml(row, row.Position === 'TW');
 }
 
 function renderTeamAuswertung(el, data) {
-  function block(titel, teil) {
+  function block(titel, teil, isTW) {
     return '<h2 style="margin-top:1.2rem">' + titel + '</h2>' +
-      '<div class="aus-section-title">1. Halbzeit</div>' + statsBlockHtml(teil.HZ1) +
-      '<div class="aus-section-title">2. Halbzeit</div>' + statsBlockHtml(teil.HZ2) +
-      '<div class="aus-section-title">Gesamtes Spiel</div>' + statsBlockHtml(teil.Gesamt);
+      '<div class="aus-section-title">1. Halbzeit</div>' + statsBlockHtml(teil.HZ1, isTW) +
+      '<div class="aus-section-title">2. Halbzeit</div>' + statsBlockHtml(teil.HZ2, isTW) +
+      '<div class="aus-section-title">Gesamtes Spiel</div>' + statsBlockHtml(teil.Gesamt, isTW);
   }
-  el.innerHTML = block('Angriff (Feldspielerinnen)', data.Feld) + block('Abwehr / Torwart', data.TW);
+  el.innerHTML = block('Angriff (Feldspielerinnen)', data.Feld, false) + block('Abwehr / Torwart', data.TW, true);
 }
