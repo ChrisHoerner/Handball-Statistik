@@ -364,6 +364,16 @@ function renderTwRows() {
     row.querySelector('.btn-fehlwurf').addEventListener('click', function () { addEvent(zone, 'Gegentor'); });
     el.appendChild(row);
   });
+  const extra = document.createElement('div');
+  extra.className = 'btn-grid';
+  extra.style.marginTop = '0.6rem';
+  ['Assist', 'Fehlpass'].forEach(function (typ) {
+    const btn = document.createElement('button');
+    btn.textContent = typ;
+    btn.addEventListener('click', function () { addEvent(typ, ''); });
+    extra.appendChild(btn);
+  });
+  el.appendChild(extra);
 }
 
 function renderGrid(elementId, items) {
