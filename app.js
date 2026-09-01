@@ -123,7 +123,10 @@ async function init() {
 /* ---------- UI-Verdrahtung ---------- */
 function bindUI() {
   document.querySelectorAll('nav.tabbar .tab').forEach(function (btn) {
-    btn.addEventListener('click', function () { showScreen(btn.dataset.screen); });
+    btn.addEventListener('click', function () {
+      showScreen(btn.dataset.screen);
+      if (btn.dataset.screen === 'auswertung') populateAuswertungSelects();
+    });
   });
 
   document.getElementById('btnSaveSettings').addEventListener('click', async function () {
@@ -174,6 +177,8 @@ function bindUI() {
     renderSquadScreen(game && game.AktiveSpielerinnen && game.AktiveSpielerinnen.length ? game.AktiveSpielerinnen : null);
     showScreen('squad');
   });
+
+  document.getElementById('btnAuswertungAnzeigen').addEventListener('click', showAuswertung);
 
   document.getElementById('syncBtn').addEventListener('click', function () { trySync(true); });
 
@@ -501,4 +506,87 @@ async function updateStatusBar() {
   document.getElementById('pending').textContent = online
     ? (pending ? pending + ' Einträge warten auf Sync' : 'Alles synchron')
     : (pending ? pending + ' Einträge lokal gespeichert (offline)' : 'Offline · keine ausstehenden Einträge');
+}
+
+/* ---------- Auswertung ---------- */
+
+async function populateAuswertungSelects() {
+  const spielerinSelect = document.getElementById('ausSpielerin');
+  spielerinSelect.innerHTML = '';
+  state.roster.forEach(function (p) {
+    const opt = document.createElement('option');
+    opt.value = p.Name;
+    opt.textContent = p.Name;
+    spielerinSelect.appendChild(opt);
+  });
+
+  const zeitraumSelect = document.getElementById('ausZeitraum');
+  zeitraumSelect.innerHTML = '<option value="runde">Ganze Runde (' + (state.runde || '–') + ')</option>';
+
+  if (!state.scriptUrl) return;
+  try {
+    const res = await fetch(state.scriptUrl + '?action=spiele');
+    const spiele = await res.json();
+    spiele
+      .filter(function (s) { return s.Runde === state.runde; })
+      .sort(function (a, b) { return (a.Datum || '').localeCompare(b.Datum || ''); })
+      .forEach(function (s) {
+        const opt = document.createElement('option');
+        opt.value = s.SpielID;
+        opt.textContent = s.Datum + ' · ' + s.Gegner;
+        zeitraumSelect.appendChild(opt);
+      });
+  } catch (e) {
+    // Kein Netz gerade -> nur "Ganze Runde" bleibt wählbar, kein harter Fehler.
+  }
+}
+
+async function showAuswertung() {
+  const el = document.getElementById('ausErgebnis');
+  const zeitraum = document.getElementById('ausZeitraum').value;
+  const name = document.getElementById('ausSpielerin').value;
+  if (!state.scriptUrl) { alert('Keine Apps-Script-URL hinterlegt (Tab Einstellungen).'); return; }
+  el.innerHTML = '<p class="aus-empty">Lade …</p>';
+
+  try {
+    let row = null;
+    if (zeitraum === 'runde') {
+      const res = await fetch(state.scriptUrl + '?action=auswertungSpielerin');
+      const rows = await res.json();
+      row = rows.find(function (r) { return r.Name === name && r.Runde === state.runde; });
+    } else {
+      const res = await fetch(state.scriptUrl + '?action=auswertungSpiel');
+      const rows = await res.json();
+      row = rows.find(function (r) { return r.Name === name && r.SpielID === zeitraum; });
+    }
+    renderAuswertung(el, row);
+  } catch (e) {
+    el.innerHTML = '<p class="aus-empty">Fehler beim Laden – kein Netz? (' + e.message + ')</p>';
+  }
+}
+
+function renderAuswertung(el, row) {
+  if (!row) {
+    el.innerHTML = '<p class="aus-empty">Keine Daten für diese Auswahl.</p>';
+    return;
+  }
+  let html = '';
+
+  html += '<div class="aus-section-title">Wurf</div><table class="aus-table"><tr><th>Zone</th><th>Versuche</th><th>Erfolg</th><th>Quote</th></tr>';
+  WURF_ZONEN.forEach(function (z) {
+    html += '<tr><td>' + z + '</td><td>' + (row[z + ' Versuche'] || 0) + '</td><td>' + (row[z + ' Erfolg'] || 0) + '</td><td>' + (row[z + ' Quote'] || '') + '</td></tr>';
+  });
+  html += '</table>';
+
+  function simpleTable(title, items) {
+    let t = '<div class="aus-section-title">' + title + '</div><table class="aus-table">';
+    items.forEach(function (k) { t += '<tr><td>' + k + '</td><td>' + (row[k] || 0) + '</td></tr>'; });
+    t += '</table>';
+    return t;
+  }
+  html += simpleTable('Ballgewinn', BALLGEWINN);
+  html += simpleTable('Eigener Fehler', FEHLER);
+  html += simpleTable('Einzelereignisse', EINZEL);
+
+  el.innerHTML = html;
 }

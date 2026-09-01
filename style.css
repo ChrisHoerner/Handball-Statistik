@@ -213,3 +213,10 @@ nav.tabbar button {
   font-weight: 600;
 }
 nav.tabbar button.active { color: var(--accent); }
+
+/* --- Auswertung --- */
+.aus-table { width: 100%; border-collapse: collapse; margin-bottom: 0.8rem; font-size: 0.9rem; }
+.aus-table th, .aus-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); }
+.aus-table th { color: var(--text-dim); font-weight: 600; }
+.aus-section-title { font-weight: 700; margin: 1rem 0 0.4rem; }
+.aus-empty { color: var(--text-dim); font-size: 0.9rem; }

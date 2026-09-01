@@ -121,10 +121,26 @@
     </div>
   </section>
 
+  <!-- SCREEN: Auswertung -->
+  <section class="screen" id="screen-auswertung">
+    <h1>Auswertung</h1>
+    <div class="field">
+      <label for="ausZeitraum">Zeitraum</label>
+      <select id="ausZeitraum"></select>
+    </div>
+    <div class="field">
+      <label for="ausSpielerin">Spielerin</label>
+      <select id="ausSpielerin"></select>
+    </div>
+    <button class="primary-btn" id="btnAuswertungAnzeigen">Anzeigen</button>
+    <div id="ausErgebnis"></div>
+  </section>
+
   <nav class="tabbar">
     <button data-screen="settings" class="tab active">Einstellungen</button>
     <button data-screen="game" class="tab">Spiel</button>
     <button data-screen="live" class="tab">Erfassung</button>
+    <button data-screen="auswertung" class="tab">Auswertung</button>
   </nav>
 
 </div>
