@@ -589,7 +589,11 @@ function statsBlockHtml(row, isTW) {
   const sectionTitle = isTW ? 'Paraden' : 'Wurf';
   let html = '<div class="aus-section-title">' + sectionTitle + '</div><table class="aus-table"><tr><th>Zone</th><th>' + versucheLabel + '</th><th>' + erfolgLabel + '</th><th>' + quoteLabel + '</th></tr>';
   WURF_ZONEN.forEach(function (z) {
-    html += '<tr><td>' + z + '</td><td>' + (row[z + ' Versuche'] || 0) + '</td><td>' + (row[z + ' Erfolg'] || 0) + '</td><td>' + (row[z + ' Quote'] || '') + '</td></tr>';
+    const quoteRaw = row[z + ' Quote'];
+    const quoteDisplay = (quoteRaw === '' || quoteRaw === undefined || quoteRaw === null)
+      ? ''
+      : (Math.round(quoteRaw * 1000) / 10) + '%';
+    html += '<tr><td>' + z + '</td><td>' + (row[z + ' Versuche'] || 0) + '</td><td>' + (row[z + ' Erfolg'] || 0) + '</td><td>' + quoteDisplay + '</td></tr>';
   });
   html += '</table>';
   if (isTW) {
