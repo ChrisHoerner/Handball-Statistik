@@ -545,8 +545,25 @@ async function showAuswertung() {
   const el = document.getElementById('ausErgebnis');
   const zeitraum = document.getElementById('ausZeitraum').value;
   const name = document.getElementById('ausSpielerin').value;
+  const teamGesamt = document.getElementById('ausTeamGesamt').checked;
   if (!state.scriptUrl) { alert('Keine Apps-Script-URL hinterlegt (Tab Einstellungen).'); return; }
   el.innerHTML = '<p class="aus-empty">Lade …</p>';
+
+  if (teamGesamt) {
+    if (zeitraum === 'runde') {
+      el.innerHTML = '<p class="aus-empty">Team gesamt geht nur bei einem einzelnen Spiel – bitte oben ein Spiel statt „Ganze Runde" wählen.</p>';
+      return;
+    }
+    try {
+      const res = await fetch(state.scriptUrl + '?action=auswertungSpielTeam&spielId=' + encodeURIComponent(zeitraum));
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      renderTeamAuswertung(el, data);
+    } catch (e) {
+      el.innerHTML = '<p class="aus-empty">Fehler beim Laden – kein Netz? (' + e.message + ')</p>';
+    }
+    return;
+  }
 
   try {
     let row = null;
@@ -565,28 +582,39 @@ async function showAuswertung() {
   }
 }
 
+function statsBlockHtml(row) {
+  let html = '<table class="aus-table"><tr><th>Zone</th><th>Versuche</th><th>Erfolg</th><th>Quote</th></tr>';
+  WURF_ZONEN.forEach(function (z) {
+    html += '<tr><td>' + z + '</td><td>' + (row[z + ' Versuche'] || 0) + '</td><td>' + (row[z + ' Erfolg'] || 0) + '</td><td>' + (row[z + ' Quote'] || '') + '</td></tr>';
+  });
+  html += '</table>';
+  html += simpleTableHtml('Ballgewinn', BALLGEWINN, row);
+  html += simpleTableHtml('Eigener Fehler', FEHLER, row);
+  html += simpleTableHtml('Einzelereignisse', EINZEL, row);
+  return html;
+}
+
+function simpleTableHtml(title, items, row) {
+  let t = '<div class="aus-section-title">' + title + '</div><table class="aus-table">';
+  items.forEach(function (k) { t += '<tr><td>' + k + '</td><td>' + (row[k] || 0) + '</td></tr>'; });
+  t += '</table>';
+  return t;
+}
+
 function renderAuswertung(el, row) {
   if (!row) {
     el.innerHTML = '<p class="aus-empty">Keine Daten für diese Auswahl.</p>';
     return;
   }
-  let html = '';
+  el.innerHTML = '<div class="aus-section-title">Wurf</div>' + statsBlockHtml(row);
+}
 
-  html += '<div class="aus-section-title">Wurf</div><table class="aus-table"><tr><th>Zone</th><th>Versuche</th><th>Erfolg</th><th>Quote</th></tr>';
-  WURF_ZONEN.forEach(function (z) {
-    html += '<tr><td>' + z + '</td><td>' + (row[z + ' Versuche'] || 0) + '</td><td>' + (row[z + ' Erfolg'] || 0) + '</td><td>' + (row[z + ' Quote'] || '') + '</td></tr>';
-  });
-  html += '</table>';
-
-  function simpleTable(title, items) {
-    let t = '<div class="aus-section-title">' + title + '</div><table class="aus-table">';
-    items.forEach(function (k) { t += '<tr><td>' + k + '</td><td>' + (row[k] || 0) + '</td></tr>'; });
-    t += '</table>';
-    return t;
+function renderTeamAuswertung(el, data) {
+  function block(titel, teil) {
+    return '<h2 style="margin-top:1.2rem">' + titel + '</h2>' +
+      '<div class="aus-section-title">1. Halbzeit</div>' + statsBlockHtml(teil.HZ1) +
+      '<div class="aus-section-title">2. Halbzeit</div>' + statsBlockHtml(teil.HZ2) +
+      '<div class="aus-section-title">Gesamtes Spiel</div>' + statsBlockHtml(teil.Gesamt);
   }
-  html += simpleTable('Ballgewinn', BALLGEWINN);
-  html += simpleTable('Eigener Fehler', FEHLER);
-  html += simpleTable('Einzelereignisse', EINZEL);
-
-  el.innerHTML = html;
+  el.innerHTML = block('Angriff (Feldspielerinnen)', data.Feld) + block('Abwehr / Torwart', data.TW);
 }
