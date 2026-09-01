@@ -5,7 +5,7 @@
  * 1. Google Sheet anlegen mit folgenden Tabs (Tab-Namen exakt so):
  *    - Kader:        Name | Rückennummer | Position
  *    - Kader_Runde:  Name | Runde | Status
- *    - Spiele:       SpielID | Datum | Gegner | Runde | Tore_eigene | Tore_gegner
+ *    - Spiele:       SpielID | Datum | Gegner | Runde | Tore_eigene | Tore_gegner | Status
  *    - Aktionen:     AktionID | SpielID | SpielerinID | Halbzeit | Aktionstyp | Ergebnis | Quelle | Zeitstempel
  *    - Einsatz:      SpielID | SpielerinID | Start | Ende
  *
@@ -114,14 +114,14 @@ function upsertSpiel(spiel) {
   const values = sheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] === spiel.SpielID) {
-      sheet.getRange(i + 1, 1, 1, 6).setValues([[
+      sheet.getRange(i + 1, 1, 1, 7).setValues([[
         spiel.SpielID, spiel.Datum, spiel.Gegner, spiel.Runde,
-        spiel.Tore_eigene || '', spiel.Tore_gegner || ''
+        spiel.Tore_eigene || '', spiel.Tore_gegner || '', spiel.Status || ''
       ]]);
       return;
     }
   }
-  sheet.appendRow([spiel.SpielID, spiel.Datum, spiel.Gegner, spiel.Runde, spiel.Tore_eigene || '', spiel.Tore_gegner || '']);
+  sheet.appendRow([spiel.SpielID, spiel.Datum, spiel.Gegner, spiel.Runde, spiel.Tore_eigene || '', spiel.Tore_gegner || '', spiel.Status || '']);
 }
 
 function jsonResponse(obj) {

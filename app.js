@@ -134,6 +134,7 @@ function bindUI() {
   document.getElementById('btnLoadRoster').addEventListener('click', loadRosterFromBackend);
 
   document.getElementById('btnStartGame').addEventListener('click', startNewGame);
+  document.getElementById('btnEndGame').addEventListener('click', endCurrentGame);
 
   document.getElementById('syncBtn').addEventListener('click', function () { trySync(true); });
 
@@ -186,7 +187,7 @@ async function startNewGame() {
   const runde = document.getElementById('gRunde').value.trim() || state.runde;
   if (!gegner) { alert('Bitte Gegner eintragen.'); return; }
 
-  const spiel = { SpielID: uid(), Datum: datum, Gegner: gegner, Runde: runde, Tore_eigene: '', Tore_gegner: '', synced: false };
+  const spiel = { SpielID: uid(), Datum: datum, Gegner: gegner, Runde: runde, Tore_eigene: '', Tore_gegner: '', Status: 'läuft', synced: false };
   await idbPut('games', spiel);
   state.currentGameId = spiel.SpielID;
   await idbPut('settings', { key: 'currentGameId', value: spiel.SpielID });
@@ -194,6 +195,24 @@ async function startNewGame() {
   await renderGameList();
   renderLiveScreen();
   showScreen('live');
+  trySync();
+}
+
+async function endCurrentGame() {
+  if (!state.currentGameId) return;
+  const game = await idbGet('games', state.currentGameId);
+  if (!game) return;
+  game.Tore_eigene = document.getElementById('eTore').value.trim();
+  game.Tore_gegner = document.getElementById('eGegentore').value.trim();
+  game.Status = 'beendet';
+  game.synced = false;
+  await idbPut('games', game);
+
+  state.currentGameId = null;
+  await idbPut('settings', { key: 'currentGameId', value: null });
+
+  await renderGameList();
+  showScreen('game');
   trySync();
 }
 
@@ -205,7 +224,8 @@ async function renderGameList() {
     const row = document.createElement('div');
     row.className = 'action-group';
     row.style.marginBottom = '0.5rem';
-    row.innerHTML = '<strong>' + g.Gegner + '</strong> · ' + g.Datum + ' · ' + (g.synced ? 'synchronisiert' : 'noch nicht synchronisiert');
+    const status = g.Status === 'beendet' ? ('beendet · ' + (g.Tore_eigene || '?') + ':' + (g.Tore_gegner || '?')) : 'läuft';
+    row.innerHTML = '<strong>' + g.Gegner + '</strong> · ' + g.Datum + ' · ' + status + ' · ' + (g.synced ? 'synchronisiert' : 'noch nicht synchronisiert');
     const btn = document.createElement('button');
     btn.className = 'secondary-btn';
     btn.style.marginTop = '0.5rem';
@@ -214,11 +234,18 @@ async function renderGameList() {
       state.currentGameId = g.SpielID;
       await idbPut('settings', { key: 'currentGameId', value: g.SpielID });
       renderLiveScreen();
+      renderEndGameSection();
       showScreen('live');
     });
     row.appendChild(btn);
     el.appendChild(row);
   });
+  renderEndGameSection();
+}
+
+function renderEndGameSection() {
+  const section = document.getElementById('endGameSection');
+  section.style.display = state.currentGameId ? '' : 'none';
 }
 
 /* ---------- Live-Erfassung ---------- */
