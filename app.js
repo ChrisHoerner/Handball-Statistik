@@ -592,9 +592,13 @@ function statsBlockHtml(row, isTW) {
     html += '<tr><td>' + z + '</td><td>' + (row[z + ' Versuche'] || 0) + '</td><td>' + (row[z + ' Erfolg'] || 0) + '</td><td>' + (row[z + ' Quote'] || '') + '</td></tr>';
   });
   html += '</table>';
-  html += simpleTableHtml('Ballgewinn', BALLGEWINN, row);
-  html += simpleTableHtml('Eigener Fehler', FEHLER, row);
-  html += simpleTableHtml('Einzelereignisse', EINZEL, row);
+  if (isTW) {
+    html += simpleTableHtml('Einzelereignisse', ['Assist', 'Fehlpass'], row);
+  } else {
+    html += simpleTableHtml('Ballgewinn', BALLGEWINN, row);
+    html += simpleTableHtml('Eigener Fehler', FEHLER, row);
+    html += simpleTableHtml('Einzelereignisse', EINZEL, row);
+  }
   return html;
 }
 
