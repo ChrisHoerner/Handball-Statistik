@@ -79,7 +79,8 @@ const state = {
   currentHalbzeit: '1',
   selectedPlayerId: null,
   scriptUrl: '',
-  runde: ''
+  runde: '',
+  activeRosterNames: null
 };
 
 /* ---------- Initialisierung ---------- */
@@ -107,6 +108,9 @@ async function init() {
   bindUI();
   await renderGameList();
   if (state.currentGameId) {
+    const currentGame = await idbGet('games', state.currentGameId);
+    state.activeRosterNames = (currentGame && currentGame.AktiveSpielerinnen && currentGame.AktiveSpielerinnen.length)
+      ? currentGame.AktiveSpielerinnen : null;
     renderLiveScreen();
   }
   updateStatusBar();
@@ -135,6 +139,25 @@ function bindUI() {
 
   document.getElementById('btnStartGame').addEventListener('click', startNewGame);
   document.getElementById('btnEndGame').addEventListener('click', endCurrentGame);
+
+  document.getElementById('btnSquadConfirm').addEventListener('click', async function () {
+    const selection = getSquadSelection();
+    const game = await idbGet('games', state.currentGameId);
+    if (game) {
+      game.AktiveSpielerinnen = selection;
+      await idbPut('games', game);
+    }
+    state.activeRosterNames = selection.length ? selection : null;
+    renderLiveScreen();
+    showScreen('live');
+  });
+
+  document.getElementById('btnEditSquad').addEventListener('click', async function () {
+    if (!state.currentGameId) { alert('Erst ein Spiel starten.'); return; }
+    const game = await idbGet('games', state.currentGameId);
+    renderSquadScreen(game && game.AktiveSpielerinnen && game.AktiveSpielerinnen.length ? game.AktiveSpielerinnen : null);
+    showScreen('squad');
+  });
 
   document.getElementById('syncBtn').addEventListener('click', function () { trySync(true); });
 
@@ -193,9 +216,33 @@ async function startNewGame() {
   await idbPut('settings', { key: 'currentGameId', value: spiel.SpielID });
 
   await renderGameList();
-  renderLiveScreen();
-  showScreen('live');
+  renderSquadScreen(null);
+  showScreen('squad');
   trySync();
+}
+
+function renderSquadScreen(preselected) {
+  const el = document.getElementById('squadList');
+  el.innerHTML = '';
+  state.roster.forEach(function (p) {
+    const checked = preselected ? preselected.indexOf(p.Name) !== -1 : true;
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid #333a46;';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.dataset.name = p.Name;
+    box.checked = checked;
+    box.style.cssText = 'width:1.3rem;height:1.3rem;flex-shrink:0;';
+    const label = document.createElement('span');
+    label.textContent = (p.Rückennummer ? '#' + p.Rückennummer + ' ' : '') + p.Name + (p.Position === 'TW' ? ' (TW)' : '');
+    row.appendChild(box);
+    row.appendChild(label);
+    el.appendChild(row);
+  });
+}
+
+function getSquadSelection() {
+  return Array.from(document.querySelectorAll('#squadList input[type=checkbox]:checked')).map(function (cb) { return cb.dataset.name; });
 }
 
 async function endCurrentGame() {
@@ -233,6 +280,7 @@ async function renderGameList() {
     btn.addEventListener('click', async function () {
       state.currentGameId = g.SpielID;
       await idbPut('settings', { key: 'currentGameId', value: g.SpielID });
+      state.activeRosterNames = (g.AktiveSpielerinnen && g.AktiveSpielerinnen.length) ? g.AktiveSpielerinnen : null;
       renderLiveScreen();
       renderEndGameSection();
       showScreen('live');
@@ -263,7 +311,10 @@ function renderLiveScreen() {
 function renderPlayerStrip() {
   const el = document.getElementById('playerStrip');
   el.innerHTML = '';
-  state.roster.forEach(function (p) {
+  const list = state.activeRosterNames
+    ? state.roster.filter(function (p) { return state.activeRosterNames.indexOf(p.Name) !== -1; })
+    : state.roster;
+  list.forEach(function (p) {
     const chip = document.createElement('button');
     chip.className = 'player-chip' + (p.SpielerinID === state.selectedPlayerId ? ' selected' : '');
     chip.innerHTML = (p.Rückennummer ? '<span class="num">#' + p.Rückennummer + '</span>' : '') + p.Name;
