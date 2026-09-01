@@ -137,6 +137,22 @@ function bindUI() {
 
   document.getElementById('btnLoadRoster').addEventListener('click', loadRosterFromBackend);
 
+  document.getElementById('btnForceUpdate').addEventListener('click', async function () {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(function (r) { return r.unregister(); }));
+      }
+      location.reload();
+    } catch (e) {
+      alert('Fehler beim Aktualisieren: ' + e.message);
+    }
+  });
+
   document.getElementById('btnStartGame').addEventListener('click', startNewGame);
   document.getElementById('btnEndGame').addEventListener('click', endCurrentGame);
 
