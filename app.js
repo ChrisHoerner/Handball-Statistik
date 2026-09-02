@@ -80,7 +80,8 @@ const state = {
   selectedPlayerId: null,
   scriptUrl: '',
   runde: '',
-  activeRosterNames: null
+  activeRosterNames: null,
+  syncing: false
 };
 
 /* ---------- Initialisierung ---------- */
@@ -330,12 +331,18 @@ function renderLiveScreen() {
 }
 
 function renderPlayerStrip() {
-  const el = document.getElementById('playerStrip');
-  el.innerHTML = '';
+  const elFeld = document.getElementById('playerStripFeld');
+  const elTW = document.getElementById('playerStripTW');
+  elFeld.innerHTML = '';
+  elTW.innerHTML = '';
   const list = state.activeRosterNames
     ? state.roster.filter(function (p) { return state.activeRosterNames.indexOf(p.Name) !== -1; })
     : state.roster;
-  list.forEach(function (p) {
+  const byNummer = function (a, b) { return (Number(a.Rückennummer) || 0) - (Number(b.Rückennummer) || 0); };
+  const feld = list.filter(function (p) { return p.Position !== 'TW'; }).sort(byNummer);
+  const tw = list.filter(function (p) { return p.Position === 'TW'; }).sort(byNummer);
+
+  function buildChip(p) {
     const chip = document.createElement('button');
     chip.className = 'player-chip' + (p.SpielerinID === state.selectedPlayerId ? ' selected' : '');
     chip.innerHTML = (p.Rückennummer ? '<span class="num">#' + p.Rückennummer + '</span>' : '') + p.Name;
@@ -344,8 +351,11 @@ function renderPlayerStrip() {
       renderPlayerStrip();
       toggleTwView(p.Position === 'TW');
     });
-    el.appendChild(chip);
-  });
+    return chip;
+  }
+
+  feld.forEach(function (p) { elFeld.appendChild(buildChip(p)); });
+  tw.forEach(function (p) { elTW.appendChild(buildChip(p)); });
 }
 
 function toggleTwView(isTw) {
@@ -462,6 +472,16 @@ function renderEventList() {
 
 /* ---------- Sync ---------- */
 async function trySync(manual) {
+  if (state.syncing) { if (manual) alert('Synchronisierung läuft schon.'); return; }
+  state.syncing = true;
+  try {
+    await trySyncInner(manual);
+  } finally {
+    state.syncing = false;
+  }
+}
+
+async function trySyncInner(manual) {
   const dot = document.getElementById('statusDot');
   if (!navigator.onLine) { updateStatusBar(); if (manual) alert('Kein Netz gerade.'); return; }
   if (!state.scriptUrl) { updateStatusBar(); if (manual) alert('Keine Apps-Script-URL hinterlegt (Tab Einstellungen).'); return; }

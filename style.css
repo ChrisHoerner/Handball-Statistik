@@ -121,12 +121,14 @@ input[type="text"], input[type="date"], input[type="url"], select {
 }
 #halbzeitToggle button.active { background: var(--accent); color: #14171c; border-color: var(--accent); }
 
-#playerStrip {
+.player-grid {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  overflow-x: auto;
   padding-bottom: 0.3rem;
 }
+.player-grid-feld { justify-content: flex-start; }
+.player-grid-tw { justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 0.6rem; margin-top: 0.2rem; }
 .player-chip {
   flex-shrink: 0;
   padding: 0.6rem 1rem;
