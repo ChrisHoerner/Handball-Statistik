@@ -354,7 +354,18 @@ function renderPlayerStrip() {
     return chip;
   }
 
-  feld.forEach(function (p) { elFeld.appendChild(buildChip(p)); });
+  const half = Math.ceil(feld.length / 2);
+  const row1 = document.createElement('div');
+  row1.className = 'player-row';
+  feld.slice(0, half).forEach(function (p) { row1.appendChild(buildChip(p)); });
+  elFeld.appendChild(row1);
+  if (feld.length > half) {
+    const row2 = document.createElement('div');
+    row2.className = 'player-row';
+    feld.slice(half).forEach(function (p) { row2.appendChild(buildChip(p)); });
+    elFeld.appendChild(row2);
+  }
+
   tw.forEach(function (p) { elTW.appendChild(buildChip(p)); });
 }
 
