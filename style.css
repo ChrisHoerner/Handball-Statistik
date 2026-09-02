@@ -121,14 +121,35 @@ input[type="text"], input[type="date"], input[type="url"], select {
 }
 #halbzeitToggle button.active { background: var(--accent); color: #14171c; border-color: var(--accent); }
 
-.player-grid {
+.player-group-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0.5rem 0 0.3rem;
+}
+.player-group-label:first-of-type { margin-top: 0; }
+
+.player-grid-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.player-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding-bottom: 0.3rem;
+  justify-content: flex-start;
 }
-.player-grid-feld { justify-content: flex-start; }
-.player-grid-tw { justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 0.6rem; margin-top: 0.2rem; }
+.player-grid-tw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+  padding-top: 0.6rem;
+  margin-top: 0.4rem;
+}
 .player-chip {
   flex-shrink: 0;
   padding: 0.6rem 1rem;
