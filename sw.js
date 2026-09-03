@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spielstatistik-v16';
+const CACHE_NAME = 'spielstatistik-v17';
 const APP_SHELL = [
   './',
   './index.html',
@@ -33,6 +33,8 @@ self.addEventListener('activate', function (event) {
 // (die App selbst erkennt Offline-Fehler und legt Events in die lokale Warteschlange).
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return; // fremde Adressen (z. B. Apps-Script-API) NICHT abfangen
   event.respondWith(
     caches.match(event.request).then(function (cached) {
       return cached || fetch(event.request).catch(function () {
