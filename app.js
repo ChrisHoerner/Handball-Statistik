@@ -72,13 +72,15 @@ function idbClear(name) {
   });
 }
 
+/* ---------- Feste Adresse der eigenen Netlify-Vermittlerfunktion ---------- */
+const API_BASE = '/.netlify/functions/api';
+
 /* ---------- App-Zustand (nur im Speicher) ---------- */
 const state = {
   roster: [],
   currentGameId: null,
   currentHalbzeit: '1',
   selectedPlayerId: null,
-  scriptUrl: '',
   runde: '',
   activeRosterNames: null,
   syncing: false
@@ -92,14 +94,11 @@ async function init() {
     navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('SW-Fehler', e); });
   }
 
-  const s1 = await idbGet('settings', 'scriptUrl');
   const s2 = await idbGet('settings', 'runde');
   const s3 = await idbGet('settings', 'currentGameId');
-  state.scriptUrl = s1 ? s1.value : '';
   state.runde = s2 ? s2.value : '';
   state.currentGameId = s3 ? s3.value : null;
 
-  document.getElementById('scriptUrl').value = state.scriptUrl;
   document.getElementById('rundeSelect').value = state.runde;
   document.getElementById('gRunde').value = state.runde;
 
@@ -131,9 +130,7 @@ function bindUI() {
   });
 
   document.getElementById('btnSaveSettings').addEventListener('click', async function () {
-    state.scriptUrl = document.getElementById('scriptUrl').value.trim();
     state.runde = document.getElementById('rundeSelect').value.trim();
-    await idbPut('settings', { key: 'scriptUrl', value: state.scriptUrl });
     await idbPut('settings', { key: 'runde', value: state.runde });
     document.getElementById('gRunde').value = state.runde;
     alert('Gespeichert.');
@@ -200,12 +197,10 @@ function showScreen(name) {
 
 /* ---------- Kader laden (braucht Internet, i. d. R. vor dem Spiel zu Hause) ---------- */
 async function loadRosterFromBackend() {
-  const url = document.getElementById('scriptUrl').value.trim();
   const runde = document.getElementById('rundeSelect').value.trim();
-  if (!url) { alert('Bitte zuerst die Apps-Script-URL eintragen und speichern.'); return; }
   document.getElementById('rosterStatus').textContent = 'Lade …';
   try {
-    const res = await fetch(url + '?action=roster&runde=' + encodeURIComponent(runde));
+    const res = await fetch(API_BASE + '?action=roster&runde=' + encodeURIComponent(runde));
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     await idbClear('roster');
@@ -214,7 +209,7 @@ async function loadRosterFromBackend() {
     updateRosterStatus();
     renderPlayerStrip();
   } catch (e) {
-    document.getElementById('rosterStatus').textContent = 'Fehler beim Laden – kein Netz oder falsche URL? (' + e.message + ')';
+    document.getElementById('rosterStatus').textContent = 'Fehler beim Laden – kein Netz? (' + e.message + ')';
   }
 }
 
@@ -493,18 +488,16 @@ async function trySync(manual) {
 }
 
 async function trySyncInner(manual) {
-  const dot = document.getElementById('statusDot');
   if (!navigator.onLine) { updateStatusBar(); if (manual) alert('Kein Netz gerade.'); return; }
-  if (!state.scriptUrl) { updateStatusBar(); if (manual) alert('Keine Apps-Script-URL hinterlegt (Tab Einstellungen).'); return; }
 
   const games = (await idbGetAll('games')).filter(function (g) { return !g.synced; });
   const events = (await idbGetAll('events')).filter(function (e) { return !e.synced; });
   if (!games.length && !events.length) { updateStatusBar(); if (manual) alert('Alles schon synchron.'); return; }
 
   try {
-    const res = await fetch(state.scriptUrl, {
+    const res = await fetch(API_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' }, // vermeidet CORS-Preflight bei Apps Script
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ spiele: games, aktionen: events })
     });
     const data = await res.json();
@@ -554,9 +547,8 @@ async function populateAuswertungSelects() {
   const zeitraumSelect = document.getElementById('ausZeitraum');
   zeitraumSelect.innerHTML = '<option value="runde">Ganze Runde (' + (state.runde || '–') + ')</option>';
 
-  if (!state.scriptUrl) return;
   try {
-    const res = await fetch(state.scriptUrl + '?action=spiele');
+    const res = await fetch(API_BASE + '?action=spiele');
     const spiele = await res.json();
     spiele
       .filter(function (s) { return s.Runde === state.runde; })
@@ -577,7 +569,6 @@ async function showAuswertung() {
   const zeitraum = document.getElementById('ausZeitraum').value;
   const name = document.getElementById('ausSpielerin').value;
   const teamGesamt = document.getElementById('ausTeamGesamt').checked;
-  if (!state.scriptUrl) { alert('Keine Apps-Script-URL hinterlegt (Tab Einstellungen).'); return; }
   el.innerHTML = '<p class="aus-empty">Lade …</p>';
 
   if (teamGesamt) {
@@ -586,7 +577,7 @@ async function showAuswertung() {
       return;
     }
     try {
-      const res = await fetch(state.scriptUrl + '?action=auswertungSpielTeam&spielId=' + encodeURIComponent(zeitraum));
+      const res = await fetch(API_BASE + '?action=auswertungSpielTeam&spielId=' + encodeURIComponent(zeitraum));
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       renderTeamAuswertung(el, data);
@@ -599,11 +590,11 @@ async function showAuswertung() {
   try {
     let row = null;
     if (zeitraum === 'runde') {
-      const res = await fetch(state.scriptUrl + '?action=auswertungSpielerin');
+      const res = await fetch(API_BASE + '?action=auswertungSpielerin');
       const rows = await res.json();
       row = rows.find(function (r) { return r.Name === name && r.Runde === state.runde; });
     } else {
-      const res = await fetch(state.scriptUrl + '?action=auswertungSpiel');
+      const res = await fetch(API_BASE + '?action=auswertungSpiel');
       const rows = await res.json();
       row = rows.find(function (r) { return r.Name === name && r.SpielID === zeitraum; });
     }
