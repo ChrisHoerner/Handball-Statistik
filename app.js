@@ -72,8 +72,8 @@ function idbClear(name) {
   });
 }
 
-/* ---------- Feste Adresse der eigenen Netlify-Vermittlerfunktion ---------- */
-const API_BASE = '/.netlify/functions/api';
+/* ---------- Feste Adresse der eigenen Vercel-Vermittlerfunktion ---------- */
+const API_BASE = '/api/proxy';
 
 /* ---------- App-Zustand (nur im Speicher) ---------- */
 const state = {
