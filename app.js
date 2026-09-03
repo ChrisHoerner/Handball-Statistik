@@ -177,6 +177,14 @@ function bindUI() {
   });
 
   document.getElementById('btnAuswertungAnzeigen').addEventListener('click', showAuswertung);
+  document.getElementById('btnExportAuswertung').addEventListener('click', exportAuswertungCSV);
+  document.getElementById('btnExportAktionen').addEventListener('click', exportAktionenCSV);
+
+  document.getElementById('importFile').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (file) importAktionenCSV(file);
+    e.target.value = '';
+  });
 
   document.getElementById('syncBtn').addEventListener('click', function () { trySync(true); });
 
@@ -564,6 +572,8 @@ async function populateAuswertungSelects() {
   }
 }
 
+let lastAuswertungExport = null;
+
 async function showAuswertung() {
   const el = document.getElementById('ausErgebnis');
   const zeitraum = document.getElementById('ausZeitraum').value;
@@ -574,15 +584,18 @@ async function showAuswertung() {
   if (teamGesamt) {
     if (zeitraum === 'runde') {
       el.innerHTML = '<p class="aus-empty">Team gesamt geht nur bei einem einzelnen Spiel – bitte oben ein Spiel statt „Ganze Runde" wählen.</p>';
+      lastAuswertungExport = null;
       return;
     }
     try {
       const res = await fetch(API_BASE + '?action=auswertungSpielTeam&spielId=' + encodeURIComponent(zeitraum));
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      lastAuswertungExport = { type: 'team', data: data };
       renderTeamAuswertung(el, data);
     } catch (e) {
       el.innerHTML = '<p class="aus-empty">Fehler beim Laden – kein Netz? (' + e.message + ')</p>';
+      lastAuswertungExport = null;
     }
     return;
   }
@@ -598,9 +611,11 @@ async function showAuswertung() {
       const rows = await res.json();
       row = rows.find(function (r) { return r.Name === name && r.SpielID === zeitraum; });
     }
+    lastAuswertungExport = { type: 'spielerin', row: row };
     renderAuswertung(el, row);
   } catch (e) {
     el.innerHTML = '<p class="aus-empty">Fehler beim Laden – kein Netz? (' + e.message + ')</p>';
+    lastAuswertungExport = null;
   }
 }
 
@@ -651,4 +666,168 @@ function renderTeamAuswertung(el, data) {
       '<div class="aus-section-title">Gesamtes Spiel</div>' + statsBlockHtml(teil.Gesamt, isTW);
   }
   el.innerHTML = block('Angriff (Feldspielerinnen)', data.Feld, false) + block('Abwehr / Torwart', data.TW, true);
+}
+
+/* ---------- CSV-Export ---------- */
+
+function toCSVValue(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  if (s.indexOf(';') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map(function (row) { return row.map(toCSVValue).join(';'); }).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+
+function statsRowsForCSV(row, isTW) {
+  const out = [];
+  out.push(['Zone', isTW ? 'Würfe aufs Tor' : 'Versuche', isTW ? 'Paraden' : 'Treffer', isTW ? 'Paradenquote' : 'Quote']);
+  WURF_ZONEN.forEach(function (z) {
+    const qr = row[z + ' Quote'];
+    const q = (qr === '' || qr === undefined || qr === null) ? '' : (Math.round(qr * 1000) / 10) + '%';
+    out.push([z, row[z + ' Versuche'] || 0, row[z + ' Erfolg'] || 0, q]);
+  });
+  out.push([]);
+  if (isTW) {
+    out.push(['Einzelereignisse']);
+    ['Assist', 'Fehlpass'].forEach(function (k) { out.push([k, row[k] || 0]); });
+  } else {
+    out.push(['Ballgewinn']);
+    BALLGEWINN.forEach(function (k) { out.push([k, row[k] || 0]); });
+    out.push([]);
+    out.push(['Eigener Fehler']);
+    FEHLER.forEach(function (k) { out.push([k, row[k] || 0]); });
+    out.push([]);
+    out.push(['Einzelereignisse']);
+    EINZEL.forEach(function (k) { out.push([k, row[k] || 0]); });
+  }
+  return out;
+}
+
+function exportAuswertungCSV() {
+  if (!lastAuswertungExport) { alert('Erst eine Auswertung anzeigen.'); return; }
+  let rows = [];
+  let filename = 'auswertung.csv';
+
+  if (lastAuswertungExport.type === 'spielerin') {
+    const row = lastAuswertungExport.row;
+    if (!row) { alert('Keine Daten zum Exportieren.'); return; }
+    rows.push([row.Name + (row.Position === 'TW' ? ' (TW)' : '')]);
+    rows.push([]);
+    rows = rows.concat(statsRowsForCSV(row, row.Position === 'TW'));
+    filename = 'auswertung_' + row.Name.replace(/\s+/g, '_') + '.csv';
+  } else if (lastAuswertungExport.type === 'team') {
+    const data = lastAuswertungExport.data;
+    ['Feld', 'TW'].forEach(function (gruppe) {
+      const isTW = gruppe === 'TW';
+      rows.push([isTW ? 'Abwehr / Torwart' : 'Angriff (Feldspielerinnen)']);
+      ['HZ1', 'HZ2', 'Gesamt'].forEach(function (teil) {
+        const label = teil === 'HZ1' ? '1. Halbzeit' : teil === 'HZ2' ? '2. Halbzeit' : 'Gesamtes Spiel';
+        rows.push([label]);
+        rows = rows.concat(statsRowsForCSV(data[gruppe][teil], isTW));
+        rows.push([]);
+      });
+    });
+    filename = 'team_auswertung.csv';
+  }
+  downloadCSV(filename, rows);
+}
+
+async function exportAktionenCSV() {
+  const zeitraum = document.getElementById('ausZeitraum').value;
+  if (zeitraum === 'runde') { alert('Bitte oben ein einzelnes Spiel auswählen (nicht „Ganze Runde"), um die Einzelaktionen zu exportieren.'); return; }
+  try {
+    const res = await fetch(API_BASE + '?action=aktionenSpiel&spielId=' + encodeURIComponent(zeitraum));
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const rows = [['AktionID', 'SpielID', 'SpielerinID', 'Halbzeit', 'Aktionstyp', 'Ergebnis', 'Quelle', 'Zeitstempel']];
+    data.forEach(function (a) {
+      rows.push([a.AktionID, a.SpielID, a.SpielerinID, a.Halbzeit, a.Aktionstyp, a.Ergebnis, a.Quelle, a.Zeitstempel]);
+    });
+    downloadCSV('aktionen_spiel.csv', rows);
+  } catch (e) {
+    alert('Fehler beim Export: ' + e.message);
+  }
+}
+
+/* ---------- CSV-Import (Gegenstück zum Aktionen-Export) ---------- */
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        cur += c;
+      }
+    } else {
+      if (c === '"') { inQuotes = true; }
+      else if (c === ';') { result.push(cur); cur = ''; }
+      else { cur += c; }
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // BOM entfernen
+  const lines = text.split(/\r\n|\n|\r/).filter(function (l) { return l.length > 0; });
+  return lines.map(parseCSVLine);
+}
+
+async function importAktionenCSV(file) {
+  const text = await file.text();
+  const rows = parseCSV(text);
+  if (!rows.length) { alert('Datei ist leer.'); return; }
+
+  const header = rows[0];
+  const idx = {};
+  header.forEach(function (h, i) { idx[h.trim()] = i; });
+  const required = ['AktionID', 'SpielID', 'SpielerinID', 'Halbzeit', 'Aktionstyp', 'Ergebnis'];
+  const missing = required.filter(function (r) { return idx[r] === undefined; });
+  if (missing.length) {
+    alert('Ungültiges Format – es fehlen Spalten: ' + missing.join(', ') + '. Bitte eine unveränderte Export-Datei dieser App verwenden.');
+    return;
+  }
+
+  let count = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[idx['AktionID']]) continue;
+    const event = {
+      AktionID: r[idx['AktionID']],
+      SpielID: r[idx['SpielID']],
+      SpielerinID: r[idx['SpielerinID']],
+      Halbzeit: r[idx['Halbzeit']],
+      Aktionstyp: r[idx['Aktionstyp']],
+      Ergebnis: r[idx['Ergebnis']],
+      Quelle: idx['Quelle'] !== undefined && r[idx['Quelle']] ? r[idx['Quelle']] : 'import',
+      Zeitstempel: idx['Zeitstempel'] !== undefined && r[idx['Zeitstempel']] ? r[idx['Zeitstempel']] : new Date().toISOString(),
+      synced: false
+    };
+    await idbPut('events', event);
+    count++;
+  }
+  updateStatusBar();
+  alert(count + ' Aktionen aus der Datei übernommen. Werden jetzt synchronisiert.');
+  trySync();
 }
