@@ -109,6 +109,14 @@ input[type="text"], input[type="date"], input[type="url"], select {
 /* --- Live-Erfassung --- */
 #btnEditSquad { margin-bottom: 0.3rem; align-self: flex-start; }
 
+#liveScore {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  padding: 0.3rem 0 0.6rem;
+  letter-spacing: 0.05em;
+}
+
 #halbzeitToggle { display: flex; gap: 0.5rem; }
 #halbzeitToggle button {
   flex: 1;
@@ -171,8 +179,10 @@ input[type="text"], input[type="date"], input[type="url"], select {
   grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
 }
+.wurf-row:last-child { border-bottom: none; }
 .wurf-row .zone { font-size: 0.95rem; }
 .wurf-row button {
   padding: 0.7rem 1rem;

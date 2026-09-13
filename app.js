@@ -322,6 +322,15 @@ function renderEndGameSection() {
 }
 
 /* ---------- Live-Erfassung ---------- */
+async function updateLiveScore() {
+  const el = document.getElementById('liveScore');
+  if (!state.currentGameId) { el.textContent = '–  :  –'; return; }
+  const events = (await idbGetAll('events')).filter(function (e) { return e.SpielID === state.currentGameId; });
+  const eigene = events.filter(function (e) { return e.Ergebnis === 'Treffer'; }).length;
+  const gegner = events.filter(function (e) { return e.Ergebnis === 'Gegentor'; }).length;
+  el.textContent = eigene + '  :  ' + gegner;
+}
+
 function renderLiveScreen() {
   renderPlayerStrip();
   renderWurfRows();
@@ -329,6 +338,7 @@ function renderLiveScreen() {
   renderGrid('fehlerGrid', FEHLER);
   renderGrid('einzelGrid', EINZEL);
   renderEventList();
+  updateLiveScore();
   const selected = state.roster.find(function (r) { return r.SpielerinID === state.selectedPlayerId; });
   toggleTwView(selected ? selected.Position === 'TW' : false);
 }
@@ -341,9 +351,9 @@ function renderPlayerStrip() {
   const list = state.activeRosterNames
     ? state.roster.filter(function (p) { return state.activeRosterNames.indexOf(p.Name) !== -1; })
     : state.roster;
-  const byNummer = function (a, b) { return (Number(a.Rückennummer) || 0) - (Number(b.Rückennummer) || 0); };
-  const feld = list.filter(function (p) { return p.Position !== 'TW'; }).sort(byNummer);
-  const tw = list.filter(function (p) { return p.Position === 'TW'; }).sort(byNummer);
+  const byName = function (a, b) { return a.Name.localeCompare(b.Name, 'de'); };
+  const feld = list.filter(function (p) { return p.Position !== 'TW'; }).sort(byName);
+  const tw = list.filter(function (p) { return p.Position === 'TW'; }).sort(byName);
 
   function buildChip(p) {
     const chip = document.createElement('button');
@@ -453,6 +463,7 @@ async function addEvent(aktionstyp, ergebnis) {
   if (recentEvents.length > 8) recentEvents.pop();
   renderEventList();
   updateStatusBar();
+  updateLiveScore();
   trySync();
 }
 
@@ -477,6 +488,7 @@ function renderEventList() {
       if (idx !== -1) recentEvents.splice(idx, 1);
       renderEventList();
       updateStatusBar();
+      updateLiveScore();
       if (ev.synced) alert('Achtung: Diese Aktion war schon synchronisiert und muss im Google Sheet manuell gelöscht werden.');
     });
     li.appendChild(undoBtn);
@@ -828,6 +840,7 @@ async function importAktionenCSV(file) {
     count++;
   }
   updateStatusBar();
+  updateLiveScore();
   alert(count + ' Aktionen aus der Datei übernommen. Werden jetzt synchronisiert.');
   trySync();
 }
