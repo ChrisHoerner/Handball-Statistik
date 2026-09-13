@@ -577,6 +577,8 @@ async function populateAuswertungSelects() {
         const opt = document.createElement('option');
         opt.value = s.SpielID;
         opt.textContent = s.Datum + ' · ' + s.Gegner;
+        opt.dataset.datum = s.Datum;
+        opt.dataset.gegner = s.Gegner;
         zeitraumSelect.appendChild(opt);
       });
   } catch (e) {
@@ -586,11 +588,18 @@ async function populateAuswertungSelects() {
 
 let lastAuswertungExport = null;
 
+function selectedSpielInfo() {
+  const sel = document.getElementById('ausZeitraum');
+  const opt = sel.options[sel.selectedIndex];
+  return { datum: (opt && opt.dataset.datum) || '', gegner: (opt && opt.dataset.gegner) || '' };
+}
+
 async function showAuswertung() {
   const el = document.getElementById('ausErgebnis');
   const zeitraum = document.getElementById('ausZeitraum').value;
   const name = document.getElementById('ausSpielerin').value;
   const teamGesamt = document.getElementById('ausTeamGesamt').checked;
+  const spielInfo = selectedSpielInfo();
   el.innerHTML = '<p class="aus-empty">Lade …</p>';
 
   if (teamGesamt) {
@@ -603,7 +612,7 @@ async function showAuswertung() {
       const res = await fetch(API_BASE + '?action=auswertungSpielTeam&spielId=' + encodeURIComponent(zeitraum));
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      lastAuswertungExport = { type: 'team', data: data };
+      lastAuswertungExport = { type: 'team', data: data, spielInfo: spielInfo };
       renderTeamAuswertung(el, data);
     } catch (e) {
       el.innerHTML = '<p class="aus-empty">Fehler beim Laden – kein Netz? (' + e.message + ')</p>';
@@ -623,7 +632,7 @@ async function showAuswertung() {
       const rows = await res.json();
       row = rows.find(function (r) { return r.Name === name && r.SpielID === zeitraum; });
     }
-    lastAuswertungExport = { type: 'spielerin', row: row };
+    lastAuswertungExport = { type: 'spielerin', row: row, zeitraum: zeitraum, spielInfo: spielInfo };
     renderAuswertung(el, row);
   } catch (e) {
     el.innerHTML = '<p class="aus-empty">Fehler beim Laden – kein Netz? (' + e.message + ')</p>';
@@ -729,10 +738,18 @@ function statsRowsForCSV(row, isTW) {
   return out;
 }
 
+function sanitizeFilenamePart(s) {
+  return String(s || '').trim().replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_');
+}
+
 function exportAuswertungCSV() {
   if (!lastAuswertungExport) { alert('Erst eine Auswertung anzeigen.'); return; }
   let rows = [];
   let filename = 'auswertung.csv';
+  const info = lastAuswertungExport.spielInfo || { datum: '', gegner: '' };
+  const praefix = info.datum
+    ? sanitizeFilenamePart(info.datum) + '_' + sanitizeFilenamePart(info.gegner)
+    : sanitizeFilenamePart(state.runde);
 
   if (lastAuswertungExport.type === 'spielerin') {
     const row = lastAuswertungExport.row;
@@ -740,7 +757,7 @@ function exportAuswertungCSV() {
     rows.push([row.Name + (row.Position === 'TW' ? ' (TW)' : '')]);
     rows.push([]);
     rows = rows.concat(statsRowsForCSV(row, row.Position === 'TW'));
-    filename = 'auswertung_' + row.Name.replace(/\s+/g, '_') + '.csv';
+    filename = praefix + '_' + sanitizeFilenamePart(row.Name) + '_Auswertung.csv';
   } else if (lastAuswertungExport.type === 'team') {
     const data = lastAuswertungExport.data;
     ['Feld', 'TW'].forEach(function (gruppe) {
@@ -753,7 +770,7 @@ function exportAuswertungCSV() {
         rows.push([]);
       });
     });
-    filename = 'team_auswertung.csv';
+    filename = praefix + '_Team_Auswertung.csv';
   }
   downloadCSV(filename, rows);
 }
@@ -761,6 +778,7 @@ function exportAuswertungCSV() {
 async function exportAktionenCSV() {
   const zeitraum = document.getElementById('ausZeitraum').value;
   if (zeitraum === 'runde') { alert('Bitte oben ein einzelnes Spiel auswählen (nicht „Ganze Runde"), um die Einzelaktionen zu exportieren.'); return; }
+  const info = selectedSpielInfo();
   try {
     const res = await fetch(API_BASE + '?action=aktionenSpiel&spielId=' + encodeURIComponent(zeitraum));
     const data = await res.json();
@@ -769,7 +787,8 @@ async function exportAktionenCSV() {
     data.forEach(function (a) {
       rows.push([a.AktionID, a.SpielID, a.SpielerinID, a.Halbzeit, a.Aktionstyp, a.Ergebnis, a.Quelle, a.Zeitstempel]);
     });
-    downloadCSV('aktionen_spiel.csv', rows);
+    const filename = sanitizeFilenamePart(info.datum) + '_' + sanitizeFilenamePart(info.gegner) + '_Aktionen.csv';
+    downloadCSV(filename, rows);
   } catch (e) {
     alert('Fehler beim Export: ' + e.message);
   }
