@@ -391,12 +391,15 @@ function renderGamesInto(containerId, games, onContinue) {
     row.style.marginBottom = '0.5rem';
     const status = g.Status === 'beendet' ? ('beendet · ' + (g.Tore_eigene || '?') + ':' + (g.Tore_gegner || '?')) : 'läuft';
     row.innerHTML = '<strong>' + g.Gegner + '</strong> · ' + g.Datum + ' · ' + status + ' · ' + (g.synced ? 'synchronisiert' : 'noch nicht synchronisiert');
-    const btn = document.createElement('button');
-    btn.className = 'secondary-btn';
-    btn.style.marginTop = '0.5rem';
-    btn.textContent = g.SpielID === state.currentGameId ? 'Aktuell ausgewählt' : 'Fortsetzen';
-    btn.addEventListener('click', function () { onContinue(g); });
-    row.appendChild(btn);
+    const canContinue = state.role === 'admin' || g.Status !== 'beendet';
+    if (canContinue) {
+      const btn = document.createElement('button');
+      btn.className = 'secondary-btn';
+      btn.style.marginTop = '0.5rem';
+      btn.textContent = g.SpielID === state.currentGameId ? 'Aktuell ausgewählt' : 'Fortsetzen';
+      btn.addEventListener('click', function () { onContinue(g); });
+      row.appendChild(btn);
+    }
     el.appendChild(row);
   });
 }
@@ -447,11 +450,7 @@ async function continueGame(g) {
 }
 
 async function renderGameList() {
-  let games = await mergedGames();
-  if (state.role !== 'admin') {
-    games = games.filter(function (g) { return g.Status !== 'beendet'; });
-  }
-  games.sort(function (a, b) { return (b.Datum || '').localeCompare(a.Datum || ''); });
+  const games = (await mergedGames()).sort(function (a, b) { return (b.Datum || '').localeCompare(a.Datum || ''); });
   renderGamesInto('gameList', games, continueGame);
   renderEndGameSection();
 }
