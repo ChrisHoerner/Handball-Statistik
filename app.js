@@ -72,6 +72,14 @@ function idbClear(name) {
   });
 }
 
+/* ---------- Zugang / Rollen ----------
+ * Einfache Codes, kein echtes Login-System – reicht, um zu verhindern,
+ * dass Helferinnen versehentlich Einstellungen/Auswertung anfassen.
+ * Codes hier bei Bedarf anpassen.
+ */
+const ADMIN_CODE = 'admin2026';
+const NUTZER_CODES = { nutzer1: 'Nutzer 1', nutzer2: 'Nutzer 2', nutzer3: 'Nutzer 3' };
+
 /* ---------- Feste Adresse der eigenen Vercel-Vermittlerfunktion ---------- */
 const API_BASE = '/api/proxy';
 
@@ -83,16 +91,55 @@ const state = {
   selectedPlayerId: null,
   runde: '',
   activeRosterNames: null,
-  syncing: false
+  syncing: false,
+  role: null,
+  nutzerName: null
 };
 
 /* ---------- Initialisierung ---------- */
 window.addEventListener('load', init);
 
 async function init() {
+  const savedRole = await idbGet('settings', 'role');
+  if (!savedRole || !savedRole.value) {
+    bindLoginUI();
+    return;
+  }
+  state.role = savedRole.value;
+  const savedName = await idbGet('settings', 'nutzerName');
+  state.nutzerName = savedName ? savedName.value : (state.role === 'admin' ? 'Admin' : 'Nutzer');
+  await postLoginInit();
+}
+
+function bindLoginUI() {
+  document.getElementById('btnLogin').addEventListener('click', async function () {
+    const code = document.getElementById('loginCode').value.trim().toLowerCase();
+    const errorEl = document.getElementById('loginError');
+    let role = null, name = null;
+    if (code === ADMIN_CODE.toLowerCase()) {
+      role = 'admin'; name = 'Admin';
+    } else if (NUTZER_CODES[code]) {
+      role = 'nutzer'; name = NUTZER_CODES[code];
+    }
+    if (!role) { errorEl.textContent = 'Unbekannter Code.'; return; }
+    await idbPut('settings', { key: 'role', value: role });
+    await idbPut('settings', { key: 'nutzerName', value: name });
+    state.role = role;
+    state.nutzerName = name;
+    document.getElementById('screen-login').classList.remove('active');
+    await postLoginInit();
+  });
+}
+
+async function postLoginInit() {
+  document.getElementById('statusbar').style.display = '';
+  document.getElementById('tabbar').style.display = '';
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('SW-Fehler', e); });
   }
+
+  applyRoleRestrictions();
 
   const s2 = await idbGet('settings', 'runde');
   const s3 = await idbGet('settings', 'currentGameId');
@@ -111,13 +158,24 @@ async function init() {
     const currentGame = await idbGet('games', state.currentGameId);
     state.activeRosterNames = (currentGame && currentGame.AktiveSpielerinnen && currentGame.AktiveSpielerinnen.length)
       ? currentGame.AktiveSpielerinnen : null;
-    renderLiveScreen();
   }
+  await renderLiveScreen();
+  showScreen(state.role === 'nutzer' ? 'live' : 'settings');
   updateStatusBar();
   setInterval(updateStatusBar, 5000);
   setInterval(trySync, 15000);
   window.addEventListener('online', trySync);
   window.addEventListener('offline', updateStatusBar);
+}
+
+function applyRoleRestrictions() {
+  const allowedForNutzer = ['live'];
+  document.querySelectorAll('nav.tabbar .tab').forEach(function (btn) {
+    const allowed = state.role === 'admin' || allowedForNutzer.indexOf(btn.dataset.screen) !== -1;
+    btn.style.display = allowed ? '' : 'none';
+  });
+  const loggedInAsEl = document.getElementById('loggedInAs');
+  if (loggedInAsEl) loggedInAsEl.textContent = 'Angemeldet als: ' + state.nutzerName + (state.role === 'admin' ? ' (Admin)' : '');
 }
 
 /* ---------- UI-Verdrahtung ---------- */
@@ -126,7 +184,13 @@ function bindUI() {
     btn.addEventListener('click', function () {
       showScreen(btn.dataset.screen);
       if (btn.dataset.screen === 'auswertung') populateAuswertungSelects();
+      if (btn.dataset.screen === 'live') renderLiveScreen();
     });
+  });
+
+  document.getElementById('btnLogout').addEventListener('click', async function () {
+    await idbPut('settings', { key: 'role', value: null });
+    location.reload();
   });
 
   document.getElementById('btnSaveSettings').addEventListener('click', async function () {
@@ -165,7 +229,7 @@ function bindUI() {
       await idbPut('games', game);
     }
     state.activeRosterNames = selection.length ? selection : null;
-    renderLiveScreen();
+    await renderLiveScreen();
     showScreen('live');
   });
 
@@ -177,6 +241,7 @@ function bindUI() {
   });
 
   document.getElementById('btnAuswertungAnzeigen').addEventListener('click', showAuswertung);
+  document.getElementById('btnErfasserUebersicht').addEventListener('click', showErfasserUebersicht);
   document.getElementById('btnExportAuswertung').addEventListener('click', exportAuswertungCSV);
   document.getElementById('btnExportAktionen').addEventListener('click', exportAktionenCSV);
 
@@ -284,13 +349,13 @@ async function endCurrentGame() {
   await idbPut('settings', { key: 'currentGameId', value: null });
 
   await renderGameList();
-  showScreen('game');
+  await renderLiveScreen();
+  showScreen(state.role === 'admin' ? 'game' : 'live');
   trySync();
 }
 
-async function renderGameList() {
-  const games = (await idbGetAll('games')).sort(function (a, b) { return (b.Datum || '').localeCompare(a.Datum || ''); });
-  const el = document.getElementById('gameList');
+function renderGamesInto(containerId, games, onContinue) {
+  const el = document.getElementById(containerId);
   el.innerHTML = '';
   games.forEach(function (g) {
     const row = document.createElement('div');
@@ -302,17 +367,48 @@ async function renderGameList() {
     btn.className = 'secondary-btn';
     btn.style.marginTop = '0.5rem';
     btn.textContent = g.SpielID === state.currentGameId ? 'Aktuell ausgewählt' : 'Fortsetzen';
-    btn.addEventListener('click', async function () {
-      state.currentGameId = g.SpielID;
-      await idbPut('settings', { key: 'currentGameId', value: g.SpielID });
-      state.activeRosterNames = (g.AktiveSpielerinnen && g.AktiveSpielerinnen.length) ? g.AktiveSpielerinnen : null;
-      renderLiveScreen();
-      renderEndGameSection();
-      showScreen('live');
-    });
+    btn.addEventListener('click', function () { onContinue(g); });
     row.appendChild(btn);
     el.appendChild(row);
   });
+}
+
+async function fetchRemoteSpiele() {
+  if (!navigator.onLine) return [];
+  try {
+    const res = await fetch(API_BASE + '?action=spiele');
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+async function mergedGames() {
+  const localGames = await idbGetAll('games');
+  const remoteGames = await fetchRemoteSpiele();
+  const merged = {};
+  remoteGames.forEach(function (g) { merged[g.SpielID] = Object.assign({ synced: true }, g); });
+  localGames.forEach(function (g) { merged[g.SpielID] = g; }); // lokale Version hat Vorrang (z. B. mit Kaderauswahl)
+  return Object.keys(merged).map(function (k) { return merged[k]; });
+}
+
+async function continueGame(g) {
+  const existing = await idbGet('games', g.SpielID);
+  if (!existing) {
+    await idbPut('games', Object.assign({ AktiveSpielerinnen: null, synced: true }, g));
+  }
+  state.currentGameId = g.SpielID;
+  await idbPut('settings', { key: 'currentGameId', value: g.SpielID });
+  const gameRecord = existing || g;
+  state.activeRosterNames = (gameRecord.AktiveSpielerinnen && gameRecord.AktiveSpielerinnen.length) ? gameRecord.AktiveSpielerinnen : null;
+  await renderLiveScreen();
+  showScreen('live');
+}
+
+async function renderGameList() {
+  const games = (await mergedGames()).sort(function (a, b) { return (b.Datum || '').localeCompare(a.Datum || ''); });
+  renderGamesInto('gameList', games, continueGame);
   renderEndGameSection();
 }
 
@@ -331,7 +427,22 @@ async function updateLiveScore() {
   el.textContent = eigene + '  :  ' + gegner;
 }
 
-function renderLiveScreen() {
+async function renderLiveScreen() {
+  const picker = document.getElementById('liveGamePicker');
+  const mainArea = document.getElementById('liveMainArea');
+
+  if (!state.currentGameId) {
+    picker.style.display = '';
+    mainArea.style.display = 'none';
+    const games = (await mergedGames())
+      .filter(function (g) { return g.Status !== 'beendet' && (!state.runde || g.Runde === state.runde); })
+      .sort(function (a, b) { return (b.Datum || '').localeCompare(a.Datum || ''); });
+    renderGamesInto('liveGameList', games, continueGame);
+    return;
+  }
+
+  picker.style.display = 'none';
+  mainArea.style.display = '';
   renderPlayerStrip();
   renderWurfRows();
   renderGrid('ballgewinnGrid', BALLGEWINN);
@@ -339,6 +450,7 @@ function renderLiveScreen() {
   renderGrid('einzelGrid', EINZEL);
   renderEventList();
   updateLiveScore();
+  renderEndGameSection();
   const selected = state.roster.find(function (r) { return r.SpielerinID === state.selectedPlayerId; });
   toggleTwView(selected ? selected.Position === 'TW' : false);
 }
@@ -454,7 +566,7 @@ async function addEvent(aktionstyp, ergebnis) {
     Halbzeit: state.currentHalbzeit,
     Aktionstyp: aktionstyp,
     Ergebnis: ergebnis,
-    Quelle: 'manuell',
+    Quelle: state.nutzerName || 'manuell',
     Zeitstempel: new Date().toISOString(),
     synced: false
   };
@@ -862,4 +974,35 @@ async function importAktionenCSV(file) {
   updateLiveScore();
   alert(count + ' Aktionen aus der Datei übernommen. Werden jetzt synchronisiert.');
   trySync();
+}
+
+/* ---------- Erfasser-Übersicht (nach Quelle/Nutzer) ---------- */
+
+async function showErfasserUebersicht() {
+  const zeitraum = document.getElementById('ausZeitraum').value;
+  const el = document.getElementById('ausErgebnis');
+  if (zeitraum === 'runde') {
+    el.innerHTML = '<p class="aus-empty">Bitte oben ein einzelnes Spiel auswählen (nicht „Ganze Runde"), um zu sehen, wer was erfasst hat.</p>';
+    return;
+  }
+  el.innerHTML = '<p class="aus-empty">Lade …</p>';
+  lastAuswertungExport = null;
+  try {
+    const res = await fetch(API_BASE + '?action=aktionenSpiel&spielId=' + encodeURIComponent(zeitraum));
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const counts = {};
+    data.forEach(function (a) {
+      const q = a.Quelle || 'unbekannt';
+      counts[q] = (counts[q] || 0) + 1;
+    });
+    const namen = Object.keys(counts).sort();
+    if (!namen.length) { el.innerHTML = '<p class="aus-empty">Keine Aktionen für dieses Spiel.</p>'; return; }
+    let html = '<div class="aus-section-title">Aktionen nach Erfasser</div><table class="aus-table"><tr><th>Erfasser</th><th>Anzahl Aktionen</th></tr>';
+    namen.forEach(function (k) { html += '<tr><td>' + k + '</td><td>' + counts[k] + '</td></tr>'; });
+    html += '</table>';
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = '<p class="aus-empty">Fehler beim Laden: ' + e.message + '</p>';
+  }
 }

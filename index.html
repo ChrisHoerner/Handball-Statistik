@@ -12,7 +12,18 @@
 <body>
 <div id="app">
 
-  <div id="statusbar">
+  <!-- SCREEN: Login -->
+  <section class="screen active" id="screen-login">
+    <h1>Anmelden</h1>
+    <div class="field">
+      <label for="loginCode">Zugangscode</label>
+      <input type="password" id="loginCode" placeholder="Code eingeben" autocomplete="off">
+    </div>
+    <button class="primary-btn" id="btnLogin">Anmelden</button>
+    <p class="hint" id="loginError"></p>
+  </section>
+
+  <div id="statusbar" style="display:none">
     <div class="dot offline" id="statusDot"></div>
     <span id="pending">wird geladen …</span>
     <button id="syncBtn">Jetzt synchronisieren</button>
@@ -32,6 +43,10 @@
     <h2 style="margin-top:1.2rem">Nach einem Update</h2>
     <button class="secondary-btn" id="btnForceUpdate">App-Version aktualisieren</button>
     <p class="hint">Lädt die App-Dateien neu (nötig nach jeder Änderung durch mich). Kader und gespeicherte Spiele/Aktionen bleiben erhalten.</p>
+
+    <h2 style="margin-top:1.2rem">Zugang</h2>
+    <p class="hint" id="loggedInAs"></p>
+    <button class="secondary-btn" id="btnLogout">Abmelden</button>
   </section>
 
   <!-- SCREEN: Spiel anlegen -->
@@ -53,19 +68,6 @@
 
     <h2 style="margin-top:1rem">Laufende / letzte Spiele</h2>
     <div id="gameList"></div>
-
-    <div id="endGameSection" style="display:none" class="action-group">
-      <h2>Aktuelles Spiel beenden</h2>
-      <div class="field">
-        <label for="eTore">Tore eigene</label>
-        <input type="text" id="eTore" inputmode="numeric">
-      </div>
-      <div class="field">
-        <label for="eGegentore">Tore Gegner</label>
-        <input type="text" id="eGegentore" inputmode="numeric">
-      </div>
-      <button class="primary-btn" id="btnEndGame">Spiel beenden</button>
-    </div>
   </section>
 
   <!-- SCREEN: Spieltags-Kader -->
@@ -78,6 +80,12 @@
 
   <!-- SCREEN: Live-Erfassung -->
   <section class="screen" id="screen-live">
+    <div id="liveGamePicker" style="display:none">
+      <h2>Spiel fortsetzen</h2>
+      <div id="liveGameList"></div>
+    </div>
+
+    <div id="liveMainArea">
     <button class="secondary-btn" id="btnEditSquad">Kader für dieses Spiel bearbeiten</button>
     <div id="liveScore">–  :  –</div>
     <div id="halbzeitToggle">
@@ -119,6 +127,20 @@
       <h2>Letzte Aktionen</h2>
       <ul id="eventList"></ul>
     </div>
+
+    <div id="endGameSection" style="display:none" class="action-group">
+      <h2>Aktuelles Spiel beenden</h2>
+      <div class="field">
+        <label for="eTore">Tore eigene</label>
+        <input type="text" id="eTore" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="eGegentore">Tore Gegner</label>
+        <input type="text" id="eGegentore" inputmode="numeric">
+      </div>
+      <button class="primary-btn" id="btnEndGame">Spiel beenden</button>
+    </div>
+    </div>
   </section>
 
   <!-- SCREEN: Auswertung -->
@@ -137,6 +159,7 @@
       Team gesamt (statt einzelner Spielerin) – nur bei einzelnem Spiel
     </label>
     <button class="primary-btn" id="btnAuswertungAnzeigen">Anzeigen</button>
+    <button class="secondary-btn" id="btnErfasserUebersicht" style="margin-top:0.5rem">Aktionen nach Erfasser anzeigen</button>
     <div id="ausErgebnis"></div>
     <button class="secondary-btn" id="btnExportAuswertung" style="margin-top:0.8rem">Auswertung als CSV exportieren</button>
     <button class="secondary-btn" id="btnExportAktionen" style="margin-top:0.5rem">Aktionen dieses Spiels als CSV exportieren</button>
@@ -148,7 +171,7 @@
     </div>
   </section>
 
-  <nav class="tabbar">
+  <nav class="tabbar" id="tabbar" style="display:none">
     <button data-screen="settings" class="tab active">Einstellungen</button>
     <button data-screen="game" class="tab">Spiel</button>
     <button data-screen="live" class="tab">Erfassung</button>
