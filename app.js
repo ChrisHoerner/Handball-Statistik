@@ -402,22 +402,34 @@ function renderGamesInto(containerId, games, onContinue) {
 }
 
 async function fetchRemoteSpiele() {
-  if (!navigator.onLine) return [];
+  if (!navigator.onLine) return null;
   try {
     const res = await fetch(API_BASE + '?action=spiele');
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    return Array.isArray(data) ? data : null;
   } catch (e) {
-    return [];
+    return null;
   }
 }
 
 async function mergedGames() {
   const localGames = await idbGetAll('games');
   const remoteGames = await fetchRemoteSpiele();
+
+  if (remoteGames !== null) {
+    const remoteIds = {};
+    remoteGames.forEach(function (g) { remoteIds[g.SpielID] = true; });
+    // Früher synchronisierte, jetzt im Sheet fehlende Spiele auch lokal entfernen
+    // (dort gelöscht) – nur möglich, weil wir hier sicher wissen, dass der
+    // Serverabgleich gerade erfolgreich war (remoteGames !== null).
+    const toRemove = localGames.filter(function (g) { return g.synced && !remoteIds[g.SpielID]; });
+    for (const g of toRemove) { await idbDelete('games', g.SpielID); }
+  }
+
+  const currentLocal = remoteGames !== null ? await idbGetAll('games') : localGames;
   const merged = {};
-  remoteGames.forEach(function (g) { merged[g.SpielID] = Object.assign({ synced: true }, g); });
-  localGames.forEach(function (g) { merged[g.SpielID] = g; }); // lokale Version hat Vorrang (z. B. mit Kaderauswahl)
+  (remoteGames || []).forEach(function (g) { merged[g.SpielID] = Object.assign({ synced: true }, g); });
+  currentLocal.forEach(function (g) { merged[g.SpielID] = g; });
   return Object.keys(merged).map(function (k) { return merged[k]; });
 }
 
