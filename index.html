@@ -81,12 +81,17 @@
   <!-- SCREEN: Live-Erfassung -->
   <section class="screen" id="screen-live">
     <div id="liveGamePicker" style="display:none">
+      <button class="secondary-btn" id="btnLogoutPicker">Abmelden</button>
       <h2>Spiel fortsetzen</h2>
       <div id="liveGameList"></div>
     </div>
 
     <div id="liveMainArea">
-    <button class="secondary-btn" id="btnEditSquad">Kader für dieses Spiel bearbeiten</button>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <button class="secondary-btn" id="btnEditSquad">Kader für dieses Spiel bearbeiten</button>
+      <button class="secondary-btn" id="btnSwitchGame">Spiel wechseln</button>
+      <button class="secondary-btn" id="btnLogoutLive">Abmelden</button>
+    </div>
     <div id="liveScore">–  :  –</div>
     <div id="halbzeitToggle">
       <button data-hz="1" class="active">1. Halbzeit</button>

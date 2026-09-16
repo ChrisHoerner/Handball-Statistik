@@ -78,7 +78,7 @@ function idbClear(name) {
  * Codes hier bei Bedarf anpassen.
  */
 const ADMIN_CODE = 'admin2026';
-const NUTZER_CODES = { nutzer1: 'Sarah', nutzer2: 'Sandra', nutzer3: 'Nutzer 3' };
+const NUTZER_CODES = { nutzer1: 'Nutzer 1', nutzer2: 'Nutzer 2', nutzer3: 'Nutzer 3' };
 
 /* ---------- Feste Adresse der eigenen Vercel-Vermittlerfunktion ---------- */
 const API_BASE = '/api/proxy';
@@ -168,6 +168,11 @@ async function postLoginInit() {
   window.addEventListener('offline', updateStatusBar);
 }
 
+async function doLogout() {
+  await idbPut('settings', { key: 'role', value: null });
+  location.reload();
+}
+
 function applyRoleRestrictions() {
   const allowedForNutzer = ['live'];
   document.querySelectorAll('nav.tabbar .tab').forEach(function (btn) {
@@ -188,9 +193,14 @@ function bindUI() {
     });
   });
 
-  document.getElementById('btnLogout').addEventListener('click', async function () {
-    await idbPut('settings', { key: 'role', value: null });
-    location.reload();
+  document.getElementById('btnLogout').addEventListener('click', doLogout);
+  document.getElementById('btnLogoutLive').addEventListener('click', doLogout);
+  document.getElementById('btnLogoutPicker').addEventListener('click', doLogout);
+
+  document.getElementById('btnSwitchGame').addEventListener('click', async function () {
+    state.currentGameId = null;
+    await idbPut('settings', { key: 'currentGameId', value: null });
+    renderLiveScreen();
   });
 
   document.getElementById('btnSaveSettings').addEventListener('click', async function () {
@@ -294,21 +304,32 @@ function updateRosterStatus() {
 }
 
 /* ---------- Spiel anlegen ---------- */
+let startingGame = false;
+
 async function startNewGame() {
+  if (startingGame) return;
   const datum = document.getElementById('gDatum').value || new Date().toISOString().slice(0, 10);
   const gegner = document.getElementById('gGegner').value.trim();
   const runde = document.getElementById('gRunde').value.trim() || state.runde;
   if (!gegner) { alert('Bitte Gegner eintragen.'); return; }
 
-  const spiel = { SpielID: uid(), Datum: datum, Gegner: gegner, Runde: runde, Tore_eigene: '', Tore_gegner: '', Status: 'läuft', synced: false };
-  await idbPut('games', spiel);
-  state.currentGameId = spiel.SpielID;
-  await idbPut('settings', { key: 'currentGameId', value: spiel.SpielID });
+  startingGame = true;
+  const btn = document.getElementById('btnStartGame');
+  btn.disabled = true;
+  try {
+    const spiel = { SpielID: uid(), Datum: datum, Gegner: gegner, Runde: runde, Tore_eigene: '', Tore_gegner: '', Status: 'läuft', synced: false };
+    await idbPut('games', spiel);
+    state.currentGameId = spiel.SpielID;
+    await idbPut('settings', { key: 'currentGameId', value: spiel.SpielID });
 
-  await renderGameList();
-  renderSquadScreen(null);
-  showScreen('squad');
-  trySync();
+    await renderGameList();
+    renderSquadScreen(null);
+    showScreen('squad');
+    trySync();
+  } finally {
+    btn.disabled = false;
+    startingGame = false;
+  }
 }
 
 function renderSquadScreen(preselected) {
