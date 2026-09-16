@@ -467,7 +467,7 @@ async function renderLiveScreen() {
     picker.style.display = '';
     mainArea.style.display = 'none';
     const games = (await mergedGames())
-      .filter(function (g) { return g.Status !== 'beendet' && (!state.runde || g.Runde === state.runde); })
+      .filter(function (g) { return g.Status !== 'beendet'; })
       .sort(function (a, b) { return (b.Datum || '').localeCompare(a.Datum || ''); });
     renderGamesInto('liveGameList', games, continueGame);
     return;
@@ -475,6 +475,8 @@ async function renderLiveScreen() {
 
   picker.style.display = 'none';
   mainArea.style.display = '';
+  const game = await idbGet('games', state.currentGameId);
+  document.getElementById('liveGameName').textContent = game ? (game.Gegner || '') : '';
   renderPlayerStrip();
   renderWurfRows();
   renderGrid('ballgewinnGrid', BALLGEWINN);
