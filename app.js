@@ -382,6 +382,10 @@ async function endCurrentGame() {
   trySync();
 }
 
+function toreOderFragezeichen(v) {
+  return (v === '' || v === undefined || v === null) ? '?' : v;
+}
+
 function renderGamesInto(containerId, games, onContinue) {
   const el = document.getElementById(containerId);
   el.innerHTML = '';
@@ -389,7 +393,7 @@ function renderGamesInto(containerId, games, onContinue) {
     const row = document.createElement('div');
     row.className = 'action-group';
     row.style.marginBottom = '0.5rem';
-    const status = g.Status === 'beendet' ? ('beendet · ' + (g.Tore_eigene || '?') + ':' + (g.Tore_gegner || '?')) : 'läuft';
+    const status = g.Status === 'beendet' ? ('beendet · ' + toreOderFragezeichen(g.Tore_eigene) + ':' + toreOderFragezeichen(g.Tore_gegner)) : 'läuft';
     row.innerHTML = '<strong>' + g.Gegner + '</strong> · ' + g.Datum + ' · ' + status + ' · ' + (g.synced ? 'synchronisiert' : 'noch nicht synchronisiert');
     const canContinue = state.role === 'admin' || g.Status !== 'beendet';
     if (canContinue) {
