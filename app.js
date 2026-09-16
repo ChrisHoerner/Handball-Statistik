@@ -422,7 +422,7 @@ async function mergedGames() {
     // Früher synchronisierte, jetzt im Sheet fehlende Spiele auch lokal entfernen
     // (dort gelöscht) – nur möglich, weil wir hier sicher wissen, dass der
     // Serverabgleich gerade erfolgreich war (remoteGames !== null).
-    const toRemove = localGames.filter(function (g) { return g.synced && !remoteIds[g.SpielID]; });
+    const toRemove = localGames.filter(function (g) { return g.synced && g.SpielID !== state.currentGameId && !remoteIds[g.SpielID]; });
     for (const g of toRemove) { await idbDelete('games', g.SpielID); }
   }
 
@@ -681,11 +681,22 @@ async function trySyncInner(manual) {
     const data = await res.json();
     if (data.status !== 'ok') throw new Error('Backend meldet Fehler');
 
-    for (const g of games) { g.synced = true; await idbPut('games', g); }
+    const confirmedSpiele = (data.results && data.results.spiele) || [];
+    const confirmedAktionen = (data.results && data.results.aktionen) || [];
+
+    for (const g of games) {
+      if (confirmedSpiele.indexOf(g.SpielID) !== -1) {
+        g.synced = true;
+        await idbPut('games', g);
+      }
+    }
     for (const e of events) {
-      e.synced = true; await idbPut('events', e);
-      const r = recentEvents.find(function (r) { return r.AktionID === e.AktionID; });
-      if (r) r.synced = true;
+      if (confirmedAktionen.indexOf(e.AktionID) !== -1) {
+        e.synced = true;
+        await idbPut('events', e);
+        const r = recentEvents.find(function (r) { return r.AktionID === e.AktionID; });
+        if (r) r.synced = true;
+      }
     }
     await renderGameList();
     updateStatusBar();
