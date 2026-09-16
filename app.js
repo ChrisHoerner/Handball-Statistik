@@ -100,46 +100,39 @@ const state = {
 window.addEventListener('load', init);
 
 async function init() {
+  document.getElementById('tabbar').style.display = '';
+  bindUI();
+
   const savedRole = await idbGet('settings', 'role');
-  if (!savedRole || !savedRole.value) {
-    bindLoginUI();
-    return;
+  if (savedRole && savedRole.value) {
+    state.role = savedRole.value;
+    const savedName = await idbGet('settings', 'nutzerName');
+    state.nutzerName = savedName ? savedName.value : (state.role === 'admin' ? 'Admin' : 'Nutzer');
   }
-  state.role = savedRole.value;
-  const savedName = await idbGet('settings', 'nutzerName');
-  state.nutzerName = savedName ? savedName.value : (state.role === 'admin' ? 'Admin' : 'Nutzer');
-  await postLoginInit();
+  applyRoleRestrictions();
+  updateLoginScreenView();
+
+  if (state.role) {
+    await postLoginInit();
+  } else {
+    showScreen('login');
+  }
 }
 
-function bindLoginUI() {
-  document.getElementById('btnLogin').addEventListener('click', async function () {
-    const code = document.getElementById('loginCode').value.trim().toLowerCase();
-    const errorEl = document.getElementById('loginError');
-    let role = null, name = null;
-    if (code === ADMIN_CODE.toLowerCase()) {
-      role = 'admin'; name = 'Admin';
-    } else if (NUTZER_CODES[code]) {
-      role = 'nutzer'; name = NUTZER_CODES[code];
-    }
-    if (!role) { errorEl.textContent = 'Unbekannter Code.'; return; }
-    await idbPut('settings', { key: 'role', value: role });
-    await idbPut('settings', { key: 'nutzerName', value: name });
-    state.role = role;
-    state.nutzerName = name;
-    document.getElementById('screen-login').classList.remove('active');
-    await postLoginInit();
-  });
+function updateLoginScreenView() {
+  document.getElementById('loginForm').style.display = state.role ? 'none' : '';
+  document.getElementById('logoutForm').style.display = state.role ? '' : 'none';
+  if (state.role) {
+    document.getElementById('loggedInAs').textContent = 'Angemeldet als: ' + state.nutzerName + (state.role === 'admin' ? ' (Admin)' : '');
+  }
 }
 
 async function postLoginInit() {
   document.getElementById('statusbar').style.display = '';
-  document.getElementById('tabbar').style.display = '';
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('SW-Fehler', e); });
   }
-
-  applyRoleRestrictions();
 
   const s2 = await idbGet('settings', 'runde');
   const s3 = await idbGet('settings', 'currentGameId');
@@ -152,7 +145,6 @@ async function postLoginInit() {
   state.roster = await idbGetAll('roster');
   updateRosterStatus();
 
-  bindUI();
   await renderGameList();
   if (state.currentGameId) {
     const currentGame = await idbGet('games', state.currentGameId);
@@ -176,12 +168,12 @@ async function doLogout() {
 function applyRoleRestrictions() {
   const allowedForNutzer = ['live', 'game'];
   document.querySelectorAll('nav.tabbar .tab').forEach(function (btn) {
+    if (btn.dataset.screen === 'login') { btn.style.display = ''; return; }
+    if (!state.role) { btn.style.display = 'none'; return; }
     const allowed = state.role === 'admin' || allowedForNutzer.indexOf(btn.dataset.screen) !== -1;
     btn.style.display = allowed ? '' : 'none';
   });
   document.getElementById('newGameForm').style.display = state.role === 'admin' ? '' : 'none';
-  const loggedInAsEl = document.getElementById('loggedInAs');
-  if (loggedInAsEl) loggedInAsEl.textContent = 'Angemeldet als: ' + state.nutzerName + (state.role === 'admin' ? ' (Admin)' : '');
 }
 
 /* ---------- UI-Verdrahtung ---------- */
@@ -191,11 +183,32 @@ function bindUI() {
       showScreen(btn.dataset.screen);
       if (btn.dataset.screen === 'auswertung') populateAuswertungSelects();
       if (btn.dataset.screen === 'live') renderLiveScreen();
+      if (btn.dataset.screen === 'login') updateLoginScreenView();
     });
   });
 
+  document.getElementById('btnLogin').addEventListener('click', async function () {
+    const code = document.getElementById('loginCode').value.trim().toLowerCase();
+    const errorEl = document.getElementById('loginError');
+    let role = null, name = null;
+    if (code === ADMIN_CODE.toLowerCase()) {
+      role = 'admin'; name = 'Admin';
+    } else if (NUTZER_CODES[code]) {
+      role = 'nutzer'; name = NUTZER_CODES[code];
+    }
+    if (!role) { errorEl.textContent = 'Unbekannter Code.'; return; }
+    await idbPut('settings', { key: 'role', value: role });
+    await idbPut('settings', { key: 'nutzerName', value: name });
+    state.role = role;
+    state.nutzerName = name;
+    document.getElementById('loginCode').value = '';
+    errorEl.textContent = '';
+    applyRoleRestrictions();
+    updateLoginScreenView();
+    await postLoginInit();
+  });
+
   document.getElementById('btnLogout').addEventListener('click', doLogout);
-  document.getElementById('btnLogoutGame').addEventListener('click', doLogout);
 
   document.getElementById('btnSaveSettings').addEventListener('click', async function () {
     state.runde = document.getElementById('rundeSelect').value.trim();
@@ -422,7 +435,11 @@ async function continueGame(g) {
 }
 
 async function renderGameList() {
-  const games = (await mergedGames()).sort(function (a, b) { return (b.Datum || '').localeCompare(a.Datum || ''); });
+  let games = await mergedGames();
+  if (state.role !== 'admin') {
+    games = games.filter(function (g) { return g.Status !== 'beendet'; });
+  }
+  games.sort(function (a, b) { return (b.Datum || '').localeCompare(a.Datum || ''); });
   renderGamesInto('gameList', games, continueGame);
   renderEndGameSection();
 }

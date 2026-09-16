@@ -12,15 +12,21 @@
 <body>
 <div id="app">
 
-  <!-- SCREEN: Login -->
+  <!-- SCREEN: Konto (An-/Abmeldung) -->
   <section class="screen active" id="screen-login">
-    <h1>Anmelden</h1>
-    <div class="field">
-      <label for="loginCode">Zugangscode</label>
-      <input type="password" id="loginCode" placeholder="Code eingeben" autocomplete="off">
+    <h1>Konto</h1>
+    <div id="loginForm">
+      <div class="field">
+        <label for="loginCode">Zugangscode</label>
+        <input type="password" id="loginCode" placeholder="Code eingeben" autocomplete="off">
+      </div>
+      <button class="primary-btn" id="btnLogin">Anmelden</button>
+      <p class="hint" id="loginError"></p>
     </div>
-    <button class="primary-btn" id="btnLogin">Anmelden</button>
-    <p class="hint" id="loginError"></p>
+    <div id="logoutForm" style="display:none">
+      <p class="hint" id="loggedInAs"></p>
+      <button class="secondary-btn" id="btnLogout">Abmelden</button>
+    </div>
   </section>
 
   <div id="statusbar" style="display:none">
@@ -43,16 +49,10 @@
     <h2 style="margin-top:1.2rem">Nach einem Update</h2>
     <button class="secondary-btn" id="btnForceUpdate">App-Version aktualisieren</button>
     <p class="hint">Lädt die App-Dateien neu (nötig nach jeder Änderung durch mich). Kader und gespeicherte Spiele/Aktionen bleiben erhalten.</p>
-
-    <h2 style="margin-top:1.2rem">Zugang</h2>
-    <p class="hint" id="loggedInAs"></p>
-    <button class="secondary-btn" id="btnLogout">Abmelden</button>
   </section>
 
   <!-- SCREEN: Spiel anlegen -->
   <section class="screen" id="screen-game">
-    <button class="secondary-btn" id="btnLogoutGame" style="margin-bottom:0.8rem">Abmelden</button>
-
     <div id="newGameForm">
       <h1>Neues Spiel</h1>
       <div class="field">
@@ -180,6 +180,7 @@
     <button data-screen="game" class="tab">Spiel</button>
     <button data-screen="live" class="tab">Erfassung</button>
     <button data-screen="auswertung" class="tab">Auswertung</button>
+    <button data-screen="login" class="tab">Konto</button>
   </nav>
 
 </div>
