@@ -78,7 +78,7 @@ function idbClear(name) {
  * Codes hier bei Bedarf anpassen.
  */
 const ADMIN_CODE = 'admin2026';
-const NUTZER_CODES = { nutzer1: 'Nutzer 1', nutzer2: 'Nutzer 2', nutzer3: 'Nutzer 3' };
+const NUTZER_CODES = { nutzer1: 'Sarah', nutzer2: 'Sandra', nutzer3: 'Nutzer 3' };
 
 /* ---------- Feste Adresse der eigenen Vercel-Vermittlerfunktion ---------- */
 const API_BASE = '/api/proxy';
