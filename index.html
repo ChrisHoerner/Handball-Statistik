@@ -51,20 +51,24 @@
 
   <!-- SCREEN: Spiel anlegen -->
   <section class="screen" id="screen-game">
-    <h1>Neues Spiel</h1>
-    <div class="field">
-      <label for="gDatum">Datum</label>
-      <input type="date" id="gDatum">
+    <button class="secondary-btn" id="btnLogoutGame" style="margin-bottom:0.8rem">Abmelden</button>
+
+    <div id="newGameForm">
+      <h1>Neues Spiel</h1>
+      <div class="field">
+        <label for="gDatum">Datum</label>
+        <input type="date" id="gDatum">
+      </div>
+      <div class="field">
+        <label for="gGegner">Gegner</label>
+        <input type="text" id="gGegner" placeholder="z. B. HSG Hunsrück">
+      </div>
+      <div class="field">
+        <label for="gRunde">Runde</label>
+        <input type="text" id="gRunde" placeholder="2026/27 Rückrunde">
+      </div>
+      <button class="primary-btn" id="btnStartGame">Spiel starten</button>
     </div>
-    <div class="field">
-      <label for="gGegner">Gegner</label>
-      <input type="text" id="gGegner" placeholder="z. B. HSG Hunsrück">
-    </div>
-    <div class="field">
-      <label for="gRunde">Runde</label>
-      <input type="text" id="gRunde" placeholder="2026/27 Rückrunde">
-    </div>
-    <button class="primary-btn" id="btnStartGame">Spiel starten</button>
 
     <h2 style="margin-top:1rem">Laufende / letzte Spiele</h2>
     <div id="gameList"></div>
@@ -81,17 +85,12 @@
   <!-- SCREEN: Live-Erfassung -->
   <section class="screen" id="screen-live">
     <div id="liveGamePicker" style="display:none">
-      <button class="secondary-btn" id="btnLogoutPicker">Abmelden</button>
       <h2>Spiel fortsetzen</h2>
       <div id="liveGameList"></div>
     </div>
 
     <div id="liveMainArea">
-    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-      <button class="secondary-btn" id="btnEditSquad">Kader für dieses Spiel bearbeiten</button>
-      <button class="secondary-btn" id="btnSwitchGame">Spiel wechseln</button>
-      <button class="secondary-btn" id="btnLogoutLive">Abmelden</button>
-    </div>
+    <button class="secondary-btn" id="btnEditSquad">Kader für dieses Spiel bearbeiten</button>
     <div id="liveScore">–  :  –</div>
     <div id="halbzeitToggle">
       <button data-hz="1" class="active">1. Halbzeit</button>

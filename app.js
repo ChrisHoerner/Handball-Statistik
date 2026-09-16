@@ -174,11 +174,12 @@ async function doLogout() {
 }
 
 function applyRoleRestrictions() {
-  const allowedForNutzer = ['live'];
+  const allowedForNutzer = ['live', 'game'];
   document.querySelectorAll('nav.tabbar .tab').forEach(function (btn) {
     const allowed = state.role === 'admin' || allowedForNutzer.indexOf(btn.dataset.screen) !== -1;
     btn.style.display = allowed ? '' : 'none';
   });
+  document.getElementById('newGameForm').style.display = state.role === 'admin' ? '' : 'none';
   const loggedInAsEl = document.getElementById('loggedInAs');
   if (loggedInAsEl) loggedInAsEl.textContent = 'Angemeldet als: ' + state.nutzerName + (state.role === 'admin' ? ' (Admin)' : '');
 }
@@ -194,14 +195,7 @@ function bindUI() {
   });
 
   document.getElementById('btnLogout').addEventListener('click', doLogout);
-  document.getElementById('btnLogoutLive').addEventListener('click', doLogout);
-  document.getElementById('btnLogoutPicker').addEventListener('click', doLogout);
-
-  document.getElementById('btnSwitchGame').addEventListener('click', async function () {
-    state.currentGameId = null;
-    await idbPut('settings', { key: 'currentGameId', value: null });
-    renderLiveScreen();
-  });
+  document.getElementById('btnLogoutGame').addEventListener('click', doLogout);
 
   document.getElementById('btnSaveSettings').addEventListener('click', async function () {
     state.runde = document.getElementById('rundeSelect').value.trim();
