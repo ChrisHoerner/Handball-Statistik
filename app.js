@@ -581,20 +581,14 @@ function renderCourtGrid(containerId, hitValue, missValue) {
 
   const wrap = document.createElement('div');
   wrap.className = 'court-wrap';
-  wrap.innerHTML =
-    '<svg class="court-arc-svg" viewBox="0 0 400 240" preserveAspectRatio="xMidYMin meet">' +
-      '<line x1="170" y1="8" x2="230" y2="8" class="court-goalline" />' +
-      '<path d="M 110 8 A 90 90 0 0 1 290 8" class="court-line-6m" />' +
-      '<path d="M 50 8 A 150 150 0 0 1 350 8" class="court-line-9m" />' +
-    '</svg>';
 
   const positions = [
-    { label: 'LA', zone: 'Außen', left: 27.6, top: 6.6 },
-    { label: 'RA', zone: 'Außen', left: 72.4, top: 6.6 },
-    { label: '6m', zone: '6m', left: 31.6, top: 24.8 },
-    { label: '6m', zone: '6m', left: 68.4, top: 24.8 },
-    { label: 'Kreis', zone: 'Kreis', left: 50, top: 40.8 },
-    { label: '9m', zone: '9m', left: 50, top: 65.8 }
+    { label: 'LA', zone: 'Außen', left: 12, top: 8 },
+    { label: 'RA', zone: 'Außen', left: 88, top: 8 },
+    { label: 'Kreis', zone: 'Kreis', left: 50, top: 20 },
+    { label: '6m', zone: '6m', left: 31.6, top: 34 },
+    { label: '6m', zone: '6m', left: 68.4, top: 34 },
+    { label: '9m', zone: '9m', left: 50, top: 58 }
   ];
   positions.forEach(function (p) {
     const tile = buildZoneTile(p.label, p.zone, hitValue, missValue);
