@@ -185,43 +185,29 @@ input[type="text"], input[type="date"], input[type="url"], select {
 .wurf-row:last-child { border-bottom: none; }
 .wurf-row .zone { font-size: 0.95rem; }
 
-.court-wrap {
-  position: relative;
-  width: 100%;
-  height: 15rem;
-  margin-bottom: 0.8rem;
-}
-
-.zone-tile-abs {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-  width: 5.6rem;
-}
-
 .court-row {
   display: grid;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
-.court-row-2 { grid-template-columns: repeat(2, 1fr); max-width: 70%; margin: 0 auto 0.5rem; }
+.court-row-2 { grid-template-columns: repeat(2, 1fr); }
 .zone-tile {
   background: var(--panel-raised);
   border: 1px solid var(--line);
   border-radius: 0.6rem;
-  padding: 0.35rem 0.25rem;
+  padding: 0.5rem 0.3rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
 }
-.zone-label { font-size: 0.8rem; font-weight: 700; color: var(--text); }
-.zone-buttons { display: flex; flex-direction: column; gap: 0.35rem; width: 100%; }
+.zone-label { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+.zone-buttons { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
 .zone-buttons button {
-  padding: 0.6rem 0.2rem;
-  min-height: 2.6rem;
+  padding: 0.7rem 0.3rem;
+  min-height: 2.8rem;
   border-radius: 0.4rem;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   line-height: 1.1;
 }

@@ -578,33 +578,19 @@ function buildZoneTile(label, zone, hitValue, missValue) {
 function renderCourtGrid(containerId, hitValue, missValue) {
   const el = document.getElementById(containerId);
   el.innerHTML = '';
-
-  const wrap = document.createElement('div');
-  wrap.className = 'court-wrap';
-
-  const positions = [
-    { label: 'LA', zone: 'Außen', left: 12, top: 8 },
-    { label: 'RA', zone: 'Außen', left: 88, top: 8 },
-    { label: 'Kreis', zone: 'Kreis', left: 50, top: 20 },
-    { label: '6m', zone: '6m', left: 31.6, top: 34 },
-    { label: '6m', zone: '6m', left: 68.4, top: 34 },
-    { label: '9m', zone: '9m', left: 50, top: 58 }
+  const rows = [
+    ['Außen', 'Kreis'],
+    ['6m', '9m'],
+    ['7m', 'Konter']
   ];
-  positions.forEach(function (p) {
-    const tile = buildZoneTile(p.label, p.zone, hitValue, missValue);
-    tile.classList.add('zone-tile-abs');
-    tile.style.left = p.left + '%';
-    tile.style.top = p.top + '%';
-    wrap.appendChild(tile);
+  rows.forEach(function (rowZones) {
+    const row = document.createElement('div');
+    row.className = 'court-row court-row-2';
+    rowZones.forEach(function (zone) {
+      row.appendChild(buildZoneTile(zone, zone, hitValue, missValue));
+    });
+    el.appendChild(row);
   });
-
-  el.appendChild(wrap);
-
-  const bottom = document.createElement('div');
-  bottom.className = 'court-row court-row-2';
-  bottom.appendChild(buildZoneTile('7m', '7m', hitValue, missValue));
-  bottom.appendChild(buildZoneTile('Konter', 'Konter', hitValue, missValue));
-  el.appendChild(bottom);
 }
 
 function renderWurfRows() {
