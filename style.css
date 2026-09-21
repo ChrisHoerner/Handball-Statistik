@@ -185,6 +185,27 @@ input[type="text"], input[type="date"], input[type="url"], select {
 .wurf-row:last-child { border-bottom: none; }
 .wurf-row .zone { font-size: 0.95rem; }
 
+.court-wrap {
+  position: relative;
+  padding-top: 0.3rem;
+}
+.court-arc-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.court-arc-svg path {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+.court-wrap .court-row { position: relative; z-index: 1; }
+
 .court-row {
   display: grid;
   gap: 0.5rem;

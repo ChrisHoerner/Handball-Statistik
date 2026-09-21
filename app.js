@@ -552,25 +552,25 @@ function toggleTwView(isTw) {
   if (isTw) renderTwRows();
 }
 
-function buildZoneTile(zone, hitLabel, missLabel, hitValue, missValue) {
+function buildZoneTile(label, zone, hitValue, missValue) {
   const tile = document.createElement('div');
   tile.className = 'zone-tile';
-  const label = document.createElement('div');
-  label.className = 'zone-label';
-  label.textContent = zone;
+  const labelEl = document.createElement('div');
+  labelEl.className = 'zone-label';
+  labelEl.textContent = label;
   const btns = document.createElement('div');
   btns.className = 'zone-buttons';
   const missBtn = document.createElement('button');
   missBtn.className = 'btn-fehlwurf';
-  missBtn.textContent = missLabel;
+  missBtn.textContent = missValue;
   missBtn.addEventListener('click', function () { addEvent(zone, missValue); });
   const hitBtn = document.createElement('button');
   hitBtn.className = 'btn-treffer';
-  hitBtn.textContent = hitLabel;
+  hitBtn.textContent = hitValue;
   hitBtn.addEventListener('click', function () { addEvent(zone, hitValue); });
   btns.appendChild(missBtn);
   btns.appendChild(hitBtn);
-  tile.appendChild(label);
+  tile.appendChild(labelEl);
   tile.appendChild(btns);
   return tile;
 }
@@ -578,17 +578,31 @@ function buildZoneTile(zone, hitLabel, missLabel, hitValue, missValue) {
 function renderCourtGrid(containerId, hitValue, missValue) {
   const el = document.getElementById(containerId);
   el.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'court-wrap';
+  wrap.innerHTML = '<svg class="court-arc-svg" viewBox="0 0 300 170" preserveAspectRatio="none"><path d="M 15 5 Q 150 190 285 5" /></svg>';
+
   const top = document.createElement('div');
   top.className = 'court-row court-row-3';
-  ['Außen', '9m', 'Außen'].forEach(function (z) { top.appendChild(buildZoneTile(z, hitValue, missValue, hitValue, missValue)); });
+  top.appendChild(buildZoneTile('LA', 'Außen', hitValue, missValue));
+  top.appendChild(buildZoneTile('Kreis', 'Kreis', hitValue, missValue));
+  top.appendChild(buildZoneTile('RA', 'Außen', hitValue, missValue));
+
   const mid = document.createElement('div');
   mid.className = 'court-row court-row-3';
-  ['6m', 'Kreis', '6m'].forEach(function (z) { mid.appendChild(buildZoneTile(z, hitValue, missValue, hitValue, missValue)); });
+  mid.appendChild(buildZoneTile('6m', '6m', hitValue, missValue));
+  mid.appendChild(buildZoneTile('9m', '9m', hitValue, missValue));
+  mid.appendChild(buildZoneTile('6m', '6m', hitValue, missValue));
+
+  wrap.appendChild(top);
+  wrap.appendChild(mid);
+  el.appendChild(wrap);
+
   const bottom = document.createElement('div');
   bottom.className = 'court-row court-row-2';
-  ['7m', 'Konter'].forEach(function (z) { bottom.appendChild(buildZoneTile(z, hitValue, missValue, hitValue, missValue)); });
-  el.appendChild(top);
-  el.appendChild(mid);
+  bottom.appendChild(buildZoneTile('7m', '7m', hitValue, missValue));
+  bottom.appendChild(buildZoneTile('Konter', 'Konter', hitValue, missValue));
   el.appendChild(bottom);
 }
 
