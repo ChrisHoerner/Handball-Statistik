@@ -180,7 +180,6 @@ function applyRoleRestrictions() {
 function bindUI() {
   document.querySelectorAll('nav.tabbar .tab').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      alert('DEBUG: Tab "' + btn.dataset.screen + '" angeklickt, Anzeige: ' + getComputedStyle(btn).display);
       showScreen(btn.dataset.screen);
       if (btn.dataset.screen === 'auswertung') populateAuswertungSelects();
       if (btn.dataset.screen === 'live') renderLiveScreen();
