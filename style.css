@@ -66,7 +66,7 @@ button {
 #syncBtn:active { background: var(--accent); }
 
 /* --- Screens --- */
-.screen { display: none; padding: 1rem 1rem calc(5rem + env(safe-area-inset-bottom, 0)) 1rem; flex: 1; }
+.screen { display: none; padding: 1rem; flex: 1; }
 .screen.active { display: flex; flex-direction: column; gap: 1rem; }
 
 h1 { font-size: 1.3rem; margin: 0 0 0.3rem; }
@@ -107,16 +107,6 @@ input[type="text"], input[type="date"], input[type="url"], select {
 }
 
 /* --- Live-Erfassung --- */
-#btnEditSquad { margin-bottom: 0.3rem; align-self: flex-start; }
-
-#liveScore {
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 700;
-  padding: 0.3rem 0 0.6rem;
-  letter-spacing: 0.05em;
-}
-
 #halbzeitToggle { display: flex; gap: 0.5rem; }
 #halbzeitToggle button {
   flex: 1;
@@ -129,34 +119,11 @@ input[type="text"], input[type="date"], input[type="url"], select {
 }
 #halbzeitToggle button.active { background: var(--accent); color: #14171c; border-color: var(--accent); }
 
-.player-group-label {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0.5rem 0 0.3rem;
-}
-.player-group-label:first-of-type { margin-top: 0; }
-
-.player-grid-feld {
+#playerStrip {
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.player-row {
-  display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
-  justify-content: flex-start;
-}
-.player-grid-tw {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: flex-end;
-  border-top: 1px solid var(--line);
-  padding-top: 0.6rem;
-  margin-top: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
 }
 .player-chip {
   flex-shrink: 0;
@@ -179,10 +146,8 @@ input[type="text"], input[type="date"], input[type="url"], select {
   grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--line);
+  padding: 0.3rem 0;
 }
-.wurf-row:last-child { border-bottom: none; }
 .wurf-row .zone { font-size: 0.95rem; }
 .wurf-row button {
   padding: 0.7rem 1rem;
@@ -236,12 +201,6 @@ nav.tabbar {
   display: flex;
   border-top: 1px solid var(--line);
   background: var(--panel-raised);
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 20;
-  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 nav.tabbar button {
   flex: 1;
@@ -252,10 +211,3 @@ nav.tabbar button {
   font-weight: 600;
 }
 nav.tabbar button.active { color: var(--accent); }
-
-/* --- Auswertung --- */
-.aus-table { width: 100%; border-collapse: collapse; margin-bottom: 0.8rem; font-size: 0.9rem; }
-.aus-table th, .aus-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); }
-.aus-table th { color: var(--text-dim); font-weight: 600; }
-.aus-section-title { font-weight: 700; margin: 1rem 0 0.4rem; }
-.aus-empty { color: var(--text-dim); font-size: 0.9rem; }
