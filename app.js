@@ -581,7 +581,7 @@ function renderCourtGrid(containerId, hitValue, missValue) {
 
   const wrap = document.createElement('div');
   wrap.className = 'court-wrap';
-  wrap.innerHTML = '<svg class="court-arc-svg" viewBox="0 0 300 170" preserveAspectRatio="none"><path d="M 15 5 Q 150 190 285 5" /></svg>';
+  wrap.innerHTML = '<svg class="court-arc-svg" viewBox="0 0 300 60" preserveAspectRatio="none"><path d="M 10 55 Q 150 5 290 55" /></svg>';
 
   const top = document.createElement('div');
   top.className = 'court-row court-row-3';
