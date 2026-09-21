@@ -184,6 +184,38 @@ input[type="text"], input[type="date"], input[type="url"], select {
 }
 .wurf-row:last-child { border-bottom: none; }
 .wurf-row .zone { font-size: 0.95rem; }
+
+.court-row {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.court-row-3 { grid-template-columns: repeat(3, 1fr); }
+.court-row-2 { grid-template-columns: repeat(2, 1fr); max-width: 70%; margin: 0 auto 0.5rem; }
+.zone-tile {
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.zone-label { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+.zone-buttons { display: flex; gap: 0.3rem; width: 100%; }
+.zone-buttons button {
+  flex: 1;
+  padding: 0.5rem 0.15rem;
+  border-radius: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.zone-buttons .btn-treffer { background: var(--hit); color: #0e1712; }
+.zone-buttons .btn-treffer:active { filter: brightness(1.15); }
+.zone-buttons .btn-fehlwurf { background: var(--panel); color: var(--text-dim); border: 1px solid var(--line); }
+.zone-buttons .btn-fehlwurf:active { background: var(--miss); color: #fff; }
 .wurf-row button {
   padding: 0.7rem 1rem;
   border-radius: 0.5rem;
