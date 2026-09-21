@@ -581,22 +581,29 @@ function renderCourtGrid(containerId, hitValue, missValue) {
 
   const wrap = document.createElement('div');
   wrap.className = 'court-wrap';
-  wrap.innerHTML = '<svg class="court-arc-svg" viewBox="0 0 300 60" preserveAspectRatio="none"><path d="M 10 55 Q 150 5 290 55" /></svg>';
+  wrap.innerHTML =
+    '<svg class="court-arc-svg" viewBox="0 0 400 240" preserveAspectRatio="xMidYMin meet">' +
+      '<line x1="170" y1="8" x2="230" y2="8" class="court-goalline" />' +
+      '<path d="M 110 8 A 90 90 0 0 1 290 8" class="court-line-6m" />' +
+      '<path d="M 50 8 A 150 150 0 0 1 350 8" class="court-line-9m" />' +
+    '</svg>';
 
-  const top = document.createElement('div');
-  top.className = 'court-row court-row-3';
-  top.appendChild(buildZoneTile('LA', 'Außen', hitValue, missValue));
-  top.appendChild(buildZoneTile('Kreis', 'Kreis', hitValue, missValue));
-  top.appendChild(buildZoneTile('RA', 'Außen', hitValue, missValue));
+  const positions = [
+    { label: 'LA', zone: 'Außen', left: 27.6, top: 6.6 },
+    { label: 'RA', zone: 'Außen', left: 72.4, top: 6.6 },
+    { label: '6m', zone: '6m', left: 31.6, top: 24.8 },
+    { label: '6m', zone: '6m', left: 68.4, top: 24.8 },
+    { label: 'Kreis', zone: 'Kreis', left: 50, top: 40.8 },
+    { label: '9m', zone: '9m', left: 50, top: 65.8 }
+  ];
+  positions.forEach(function (p) {
+    const tile = buildZoneTile(p.label, p.zone, hitValue, missValue);
+    tile.classList.add('zone-tile-abs');
+    tile.style.left = p.left + '%';
+    tile.style.top = p.top + '%';
+    wrap.appendChild(tile);
+  });
 
-  const mid = document.createElement('div');
-  mid.className = 'court-row court-row-3';
-  mid.appendChild(buildZoneTile('6m', '6m', hitValue, missValue));
-  mid.appendChild(buildZoneTile('9m', '9m', hitValue, missValue));
-  mid.appendChild(buildZoneTile('6m', '6m', hitValue, missValue));
-
-  wrap.appendChild(top);
-  wrap.appendChild(mid);
   el.appendChild(wrap);
 
   const bottom = document.createElement('div');
