@@ -8,6 +8,24 @@
 <meta name="theme-color" content="#14171c">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="style.css">
+<script>
+(function () {
+  function showErr(msg) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b03030;color:#fff;padding:0.7rem;font-size:0.75rem;font-family:monospace;white-space:pre-wrap;max-height:40vh;overflow-y:auto;';
+    d.textContent = 'Fehler: ' + msg;
+    document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(d); });
+    if (document.body) document.body.appendChild(d);
+  }
+  window.addEventListener('error', function (e) {
+    showErr((e.message || 'Unbekannt') + '\n(' + (e.filename || '') + ':' + e.lineno + ':' + e.colno + ')');
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason;
+    showErr('Promise: ' + (r && r.message ? r.message + '\n' + (r.stack || '') : String(r)));
+  });
+})();
+</script>
 </head>
 <body>
 <div id="app">
